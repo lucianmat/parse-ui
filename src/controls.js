@@ -20,11 +20,11 @@
             this.$el.data(),
             options || {});
 
-        this.p = this.p || api.Promise.resolve();
+        this.p = this.p || Promise.resolve();
         this.p.then(function () {
             var old;
             if (!self.options.domLink) {
-                return api.Promise.resolve();
+                return Promise.resolve();
             }
             old = self.$el.data(self.options.domLink);
             if (old && typeof old.destroy === 'function') {
@@ -191,7 +191,7 @@
                     delete o;
                 }
                 self.childrens = [];
-                return api.Promise.resolve();
+                return Promise.resolve();
             });
     };
 
@@ -231,7 +231,7 @@
                     cntps.push(vp);
                 }
             });
-            return api.Promise.all(cntps);
+            return Promise.all(cntps);
         });
         return this.p;
     };
@@ -308,8 +308,8 @@
 
         return api.UI.Control.prototype.initialize.call(this)
             .then(function () {
-                return new api.Promise(function (resolve, reject) {
-                    var rz = api.Promise.resolve(),
+                return new Promise(function (resolve, reject) {
+                    var rz = Promise.resolve(),
                         o = self.options;
 
                     if (self.query) {
@@ -369,10 +369,10 @@
                                 }
                             }
                         }, o));
-                        
+
                         if (!self.options.bmRequired) {
                             self.$el.on('select2:unselect', function (evt) {
-                               // evt.preventDefault();
+                                // evt.preventDefault();
                                 self.$el.empty();
                             });
                         }
@@ -392,7 +392,7 @@
 
                 self.$el.empty().trigger('change');
                 if (!val) {
-                    return api.Promise.resolve();
+                    return Promise.resolve();
                 }
                 if (self.options.relation && !oq) {
                     pq = val.parent.relation(self.options.field).query();
@@ -410,11 +410,11 @@
                                 '<option value="{id}" selected="selected">{text}</option>'.format({ id: ri.id, text: ri.get(self.options.searchFor) }) :
                                 '<option value="{id}" selected="selected">{text}</option>'.format({ id: ri.id, text: ri.get(self.options.searchFor) });
                         }).join('')).trigger('change');
-                       /* if (!self.options.bmRequired) {
-                            self.$el.data('select2').$container.find('.select2-selection__clear').click(function() {
-                                self.$el.empty().trigger('change');
-                            });
-                        }*/
+                        /* if (!self.options.bmRequired) {
+                             self.$el.data('select2').$container.find('.select2-selection__clear').click(function() {
+                                 self.$el.empty().trigger('change');
+                             });
+                         }*/
                     });
             });
         }
@@ -428,7 +428,7 @@
             var nvals = self.$el.val();
 
             if (!self.options.relation || !parent) {
-                return api.Promise.resolve();
+                return Promise.resolve();
             }
             $.each(self.__initial, function (ix, iv) {
                 if (nvals.indexOf(iv.id) === -1) {
@@ -520,7 +520,6 @@
 
     DataTable.prototype.initialize = function () {
         var self = this,
-            pms = new api.Promise(),
             dtOptions = {
                 responsive: true,
                 deferRender: true,
@@ -685,7 +684,7 @@
             this._requires.push('datatables.buttons.colVis');
             this._requires.push('datatables.buttons.print');
             if (this.options.defaultButtons) {
-                dtOptions.buttons = dtOptions.buttons ||[];
+                dtOptions.buttons = dtOptions.buttons || [];
                 if (this.options.pageLengthButton !== false) {
                     dtOptions.buttons.push('pageLength');
                 }
@@ -703,14 +702,14 @@
 
                 if (this.options.exportButton !== false) {
                     dtOptions.buttons.push({
-                        className : 'btn btn-default btn-download',
+                        className: 'btn btn-default btn-download',
                         text: '<i class="fa fa-download"></i>',
                         action: self._exportData.bind(self)
                     });
                 }
                 if (this.options.createNew && (typeof this.options.onCreate === 'function')) {
                     dtOptions.buttons.push({
-                        className : 'btn btn-default btn-add',
+                        className: 'btn btn-default btn-add',
                         text: '<i class="fa fa-plus"></i>',
                         action: self.options.onCreate.bind(self)
                     });
@@ -721,14 +720,13 @@
 
         }
 
-        api.Utils.require(this._requires).then(function () {
+        return api.Utils.require(this._requires).then(function () {
             var ams = self._requires.indexOf('moment');
             if (ams !== -1) {
                 moment = arguments[ams];
             }
             self.dt = self.$el.DataTable(dtOptions);
-        }).then(pms.resolve.bind(pms), pms.reject.bind(pms));
-        return pms;
+        });
     };
 
     DataTable.prototype._drawCallback = function (settings) {
@@ -939,7 +937,7 @@
         if (vq.length) {
             query._orQuery(vq);
         }
-        return api.Promise.resolve(query);
+        return Promise.resolve(query);
     };
 
     DataTable.prototype.onError = function (error) {
@@ -1030,7 +1028,7 @@
             return this.options.getData.call(this);
         }
         if (!this.options.className || !this.options.pipeline) {
-            return api.Promise.resolve([]);
+            return Promise.resolve([]);
         }
         if (this.options.useMasterKey && api.masterKey) {
             vp = { useMasterKey: true };
@@ -1076,7 +1074,7 @@
             });
             return rz;
         });
-        return api.Promise.resolve(result);
+        return Promise.resolve(result);
     };
 
     api.UI.PivotTable = PivotTable;
@@ -1144,7 +1142,7 @@
                         return self.model.save({}, vo);
                     })
                     .then(function () {
-                       
+
                         return self._uploadFiles();
                     })
                     .then(function () {
@@ -1165,9 +1163,9 @@
                         }
                         if (!err.validate) {
                             api.Utils.require('notification')
-                            .then(function () {
-                                api.Trace.captureException(err);
-                            });
+                                .then(function () {
+                                    api.Trace.captureException(err);
+                                });
                         }
                     });
             });
@@ -1224,7 +1222,7 @@
         }
         pms = pms.then(function () {
             if (!self.$('.editor-lock .users-open-close').length || !api.Socket.hasClient()) {
-                return api.Promise.resolve();
+                return Promise.resolve();
             }
             self._useEditorLock = true;
             self.$('.editor-lock .users-open-close').click(function (evt) {
@@ -1245,7 +1243,7 @@
 
     Editor.prototype.wire = function (obj, asParent) {
         var self = this,
-            p = api.Promise.resolve(),
+            p = Promise.resolve(),
 
             filter = this.options.bindFilter || '[data-bm-field]';
 
@@ -1284,7 +1282,7 @@
 
         p = p.then(function () {
             var ids = [],
-                pms = api.Promise.resolve();
+                pms = Promise.resolve();
 
             self.$('.file-placeholder .file-list').empty();
 
@@ -1306,7 +1304,7 @@
                 pms = pms.then(function (frez) {
                     return api.Utils.require('Flow')
                         .then(function () {
-                            return api.Promise.all($.map(self.__files, function (flel) {
+                            return Promise.all($.map(self.__files, function (flel) {
                                 var fdata = $(flel).data(),
                                     vd = fdata.bmField.split('$')[1],
                                     image,
@@ -1353,7 +1351,7 @@
         });
 
         return p.then(function () {
-            return api.Promise.all($.map(self.childrens || [], function (cld) {
+            return Promise.all($.map(self.childrens || [], function (cld) {
                 return cld.wire(obj, true);
             }));
         }).then(function () {
@@ -1370,14 +1368,14 @@
         if (!this._timerSync) {
             return self._showLocks();
         }
-        api.Promise.resolve()
+        Promise.resolve()
             .then(function () {
                 if (!self.model || self.model.isNew() || !$.contains(document, self.$el[0])) {
                     self._timerSync.leave = true;
                 }
                 return api.Socket.client()
                     .then(function (socket) {
-                        return new api.Promise(function (resolve, reject) {
+                        return new Promise(function (resolve, reject) {
                             socket.emit('edit', self._timerSync, function (rz) {
                                 if (self._timerSync.leave) {
                                     delete self._timerSync;
@@ -1401,7 +1399,7 @@
 
         if (!locks || !this.model || this.model.id !== locks.object.objectId) {
             this.$('.editor-lock').hide();
-            return api.Promise.resolve();
+            return Promise.resolve();
         }
         $.each(locks, function (lix, lvl) {
             if (lix !== 'object') {
@@ -1415,7 +1413,7 @@
         } else {
             this.$('.editor-lock').hide();
         }
-        return api.Promise.resolve();
+        return Promise.resolve();
     };
 
     Editor.prototype.addChilds = function (chld) {
@@ -1428,13 +1426,13 @@
         var self = this,
             updated = false;
 
-        return api.Promise.all($.map(this.files,
+        return Promise.all($.map(this.files,
             function (img) {
                 var vf = $(img.el).val();
                 if (!vf) {
-                    return api.Promise.resolve();
+                    return Promise.resolve();
                 }
-                return new api.Promise(function (resolve, reject) {
+                return new Promise(function (resolve, reject) {
                     var $pel = $(img.el).parents('.input-file'),
                         finp = $pel.find("input[type=\"file\"]").eq(0);
                     $pel.find('.file-edit').hide();
@@ -1503,7 +1501,7 @@
 
     Editor.prototype.renderImage = function (img, $container) {
         var self = this,
-            rp = api.Promise.resolve();
+            rp = Promise.resolve();
 
         if (img) {
             var url = (img.url && img.publicRead ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId),
@@ -1552,7 +1550,7 @@
         var self = this,
             filter = (this.options.bindFilter || '[data-bm-field]') + '[data-bm-required]',
             failed,
-            pm = api.Promise.resolve();
+            pm = Promise.resolve();
 
         this.$(filter).each(function () {
             var data = $(this).data(),
@@ -1590,7 +1588,7 @@
 
                 failed = failed || {
                     field: data.bmField,
-                    validate : true,
+                    validate: true,
                     message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required'
                 };
 
@@ -1610,11 +1608,11 @@
 
         if (failed) {
             pm = pm.then(function () {
-                return api.Promise.reject(failed);
+                return Promise.reject(failed);
             });
         }
         return pm.then(function () {
-            return api.Promise.all($.map(self.childrens || [], function (chld) {
+            return Promise.all($.map(self.childrens || [], function (chld) {
                 return chld.validate();
             }));
         });
@@ -1628,16 +1626,16 @@
             changeEvent = 'change',
             filter = parent.options.bindFilter || '[data-bm-field]',
             prop = data.bmField, val,
-            prz = api.Promise.resolve();
+            prz = Promise.resolve();
 
         if (data.bmUpdateOnly || !prop || prop.indexOf('$') === -1) {
-            return api.Promise.resolve();
+            return Promise.resolve();
         }
 
         var nm = this.nodeName;
         prop = prop.split('$');
         if (prop[0] !== parent.options.className) {
-            return api.Promise.resolve();
+            return Promise.resolve();
         }
 
         prop = prop[1];
@@ -1793,60 +1791,61 @@
 
                         })
                         .then(function () {
-                            var pms = new api.Promise(),
-                                vpms = self.options.fileRole ||
+                            return new Promise(function (resolve, reject) {
+                                var vpms = self.options.fileRole ||
                                     $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
                                     'attachment';
 
-                            editor.saveRange();
-                            $el.parent().find('.summer-progress').show();
+                                editor.saveRange();
+                                $el.parent().find('.summer-progress').show();
 
-                            uploader = new Flow({
-                                target: '/api/storage/upload',
-                                chunkSize: 1024 * 1024,
-                                testChunks: true,
-                                query: {
-                                    applicationId: api.applicationId,
-                                    className: self.model.className,
-                                    role: vpms,
-                                    objectId: self.model.id
-                                }
+                                uploader = new Flow({
+                                    target: '/api/storage/upload',
+                                    chunkSize: 1024 * 1024,
+                                    testChunks: true,
+                                    query: {
+                                        applicationId: api.applicationId,
+                                        className: self.model.className,
+                                        role: vpms,
+                                        objectId: self.model.id
+                                    }
+                                });
+
+                                uploader.addFile(files[0]);
+                                uploader.on('fileSuccess', function (file, message) {
+                                    var jsmg = JSON.parse(message),
+                                        fdb,
+                                        vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
+
+                                    jsmg.className = jsmg.className || 'Files';
+
+                                    fdb = api.Object.fromJSON(jsmg);
+                                    self.model.relation('attachment').add(fdb);
+                                    self.trigger('saving');
+                                    return self.model.save({}, vo)
+                                        .then(function () {
+                                            self.trigger('saved');
+                                            editor.restoreRange();
+
+                                            editor.insertImage('/api/storage/' + api.applicationId + '/' + jsmg.objectId, jsmg.fileName);
+                                            $el.parent().find('.summer-progress').hide();
+                                            resolve();
+                                        }).catch(function (err) {
+                                            reject(err);
+                                        });
+                                });
+                                uploader.on('fileProgress', function (file) {
+                                    var vfp = Math.floor(file.progress() * 100);
+                                    $el.parent().find('.progress span').html(vfp < 95 ? vfp + '%' : 'sending to cloud..');
+                                    $el.parent().find('.progress .progress-bar').css({ width: vfp + '%' });
+                                });
+                                uploader.on('fileError', function (file, message) {
+                                    $el.parent().find('.summer-progress').hide();
+                                    reject(message);
+                                });
+                                uploader.upload();
                             });
 
-                            uploader.addFile(files[0]);
-                            uploader.on('fileSuccess', function (file, message) {
-                                var jsmg = JSON.parse(message),
-                                    fdb,
-                                    vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
-
-                                jsmg.className = jsmg.className || 'Files';
-
-                                fdb = api.Object.fromJSON(jsmg);
-                                self.model.relation('attachment').add(fdb);
-                                self.trigger('saving');
-                                return self.model.save({}, vo)
-                                    .then(function () {
-                                        self.trigger('saved');
-                                        editor.restoreRange();
-
-                                        editor.insertImage('/api/storage/' + api.applicationId + '/' + jsmg.objectId, jsmg.fileName);
-                                        $el.parent().find('.summer-progress').hide();
-                                        pms.resolve();
-                                    }).catch(function (err) {
-                                        pms.reject(err);
-                                    });
-                            });
-                            uploader.on('fileProgress', function (file) {
-                                var vfp = Math.floor(file.progress() * 100);
-                                $el.parent().find('.progress span').html(vfp < 95 ? vfp + '%' : 'sending to cloud..');
-                                $el.parent().find('.progress .progress-bar').css({ width: vfp + '%' });
-                            });
-                            uploader.on('fileError', function (file, message) {
-                                $el.parent().find('.summer-progress').hide();
-                                pms.reject(message);
-                            });
-                            uploader.upload();
-                            return pms;
                         })
                         .catch(function (err) {
                             api.Utils.require('notification')
@@ -1872,7 +1871,7 @@
             filter = this.options.bindFilter || '[data-bm-field]';
 
         if (!this.model && !this.options.className) {
-            return api.Promise.reject(new Error('Invalid binding'));
+            return Promise.reject(new Error('Invalid binding'));
         }
         pm = this.validate();
 
@@ -1974,7 +1973,7 @@
         });
 
         return pm.then(function () {
-            return api.Promise.all($.each(self.childrens || [], function (rms) {
+            return Promise.all($.each(self.childrens || [], function (rms) {
                 return rms.update();
             }));
         });
@@ -2060,8 +2059,8 @@
 
         api._.defaults(this.editor.options, vop);
 
-        return api.Promise.all([this.editor.p || api.Promise.resolve(),
-        this.grid.p || api.Promise.resolve()])
+        return Promise.all([this.editor.p || Promise.resolve(),
+        this.grid.p || Promise.resolve()])
             .then(function () {
                 return api.UI.Control.prototype.initialize.call(self);
             });

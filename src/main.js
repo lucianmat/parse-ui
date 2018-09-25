@@ -558,7 +558,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
         api.Socket = {
             client: function () {
                 if (api.__ioSocket) {
-                    return api.Promise.resolve(api.__ioSocket);
+                    return Promise.resolve(api.__ioSocket);
                 }
                 return api.Utils.require('socket-io')
                     .then(function (io) {
@@ -588,7 +588,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                 var vs = Array.prototype.slice.call(arguments);
                 return api.Socket.client()
                     .then(function (socket) {
-                        return new api.Promise(function (resolve, reject) {
+                        return new Promise(function (resolve, reject) {
                             vs.push(function () {
                                 var vis = Array.prototype.slice.call(arguments);
                                 resolve.apply(null, vis);
@@ -1009,7 +1009,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     });
             },
             render: function (template, object) {
-                return api.Promise.resolve()
+                return Promise.resolve()
                     .then(function () {
                         if (typeof dust !== 'undefined') {
                             return dust;
@@ -1034,29 +1034,27 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                             });
                     })
                     .then(function (dust) {
-                        var pmr = new api.Promise();
-                        dust.render(template, object, function (err, thtml) {
-                            if (err) {
-                                return pmr.reject(err);
-                            }
-                            pmr.resolve(thtml);
+                        return new Promise(function (resolve, reject) {
+                            dust.render(template, object, function (err, thtml) {
+                                if (err) {
+                                    return reject(err);
+                                }
+                                resolve(thtml);
+                            });
                         });
-                        return pmr;
                     });
             },
             require: function (reqs) {
-                var pms = new api.Promise(),
-                    args = Array.isArray(reqs) ? reqs : Array.prototype.slice.call(arguments);
-
-                require(args, function () {
-                    var cpms = Array.prototype.slice.call(arguments);
-                    pms.resolve.apply(pms, cpms);
-                }, function (err) {
-                    api.Trace.captureException(err);
-                    pms.reject.call(pms, err);
+                return new Promise(function (resolve, reject) {
+                    var args = Array.isArray(reqs) ? reqs : Array.prototype.slice.call(arguments);
+                    require(args, function () {
+                        var cpms = Array.prototype.slice.call(arguments);
+                        resolve(cpms);
+                    }, function (err) {
+                        api.Trace.captureException(err);
+                        reject(err);
+                    });
                 });
-
-                return pms;
             },
             inputDigitsOnly: function (elm) {
                 $.each(elm, function (ix, el) {
@@ -1108,19 +1106,19 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
             hasAccess: function (acl, access) {
                 access = access || 'write';
                 if (!acl || api.masterKey) {
-                    return api.Promise.as(true);
+                    return Promise.resolve(true);
                 }
                 acl = typeof acl.toJSON === 'function' ? acl.toJSON() : acl;
                 if (acl['*'] && acl['*'][access]) {
-                    return api.Promise.as(true);
+                    return Promise.resolve(true);
                 }
                 return api.User.currentAsync()
                     .then(function (us) {
                         if (!us) {
-                            return api.Promise.as(false);
+                            return Promise.resolve(false);
                         }
                         if (acl[us.id] && acl[us.id][access]) {
-                            return api.Promise.as(true);
+                            return Promise.resolve(true);
                         }
                         return us.getRoles()
                             .then(function (roles) {
@@ -1129,7 +1127,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                                     rn = 'role:' + roles[i].getName();
                                     acc = acc || (acl[rn] && acl[rn][access]);
                                 }
-                                return api.Promise.as(acc);
+                                return Promise.resolve(acc);
                             });
                     });
             },
@@ -1245,12 +1243,12 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
         api.User.prototype.getRoles = function (options) {
             var self = this;
             if (this.__roles) {
-                return api.Promise.as(this.__roles);
+                return Promise.resolve(this.__roles);
             }
             return (new api.Query(api.Role)).equalTo("users", self).find(options)
                 .then(function (roles) {
                     self.__roles = roles;
-                    return api.Promise.as(roles);
+                    return Promise.resolve(roles);
                 });
 
         };
