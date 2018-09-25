@@ -1,6 +1,6 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Box', 'jQyery'], factory);
+        define(['Box', 'jQuery'], factory);
     } else {
         var exports = {};
         factory(Box, $);
