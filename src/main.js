@@ -179,7 +179,7 @@ var CDN_ROOT = typeof __box !== 'undefined' ? __box.CDN || '' : '',
             app: CDN_ROOT + "/js/",
             vendor: CDN_ROOT + "/vendor",
             api: CDN_ROOT + '/vendor/Parse-SDK-JS/parse.min',
-            notification: CDN_ROOT + '/js/SmartNotification',
+            controls: CDN_ROOT + '/vendor/parse-ui/controls',
             jQuery: (!!document.querySelector && !!window.localStorage && !!window.addEventListener) ?
                 CDN_ROOT + "/vendor/jquery/jquery.min" :
                 ["//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min"],
@@ -911,7 +911,79 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     this.trigger.apply(this, varg);
                 }
             });
+        api.getRouter = function (root, useHash, hash) {
+            if (api._router) {
+                return Promise.resolve(api._router);
+            }
+            if (typeof useHash === 'undefined') {
+                useHash = true;
+            }
+            hash = hash || '#!';
+            return api.Utils.require('Navigo')
+                .then(function (resp) {
+                    var olv,
+                        Navigo = resp[0];
 
+                    api._router = new Navigo(root, useHash, hash);
+                    api._router.events = Object.assign({}, Events);
+                    olv = api._router._callLeave;
+
+                    api._router._callLeave = function () {
+                        api._router.events.trigger('leave');
+                        olv.apply(api._router);
+                    };
+
+                    api._router.notFound(function () {
+                        if (api._router._lastRouteResolved && api._router._lastRouteResolved.url) {
+                            $.ajax({
+                                type: "GET",
+                                url: api._router._lastRouteResolved.url + '.html',
+                                dataType: 'html',
+                                beforeSend: function (xhr) {
+                                    if (api._router.$container) {
+                                        api._router.$container.css({ opacity: '0.0' });
+                                    }
+                                }
+                            })
+                                .then(function (data) {
+                                    var pms;
+                                    if (api._router.$container) {
+
+                                        if (api._router.controller &&
+                                            (typeof api._router.controller.leave === 'function')) {
+                                            pms = api._router.controller.leave();
+                                        } else {
+                                            pms = Promise.resolve();
+                                        }
+
+                                        pms.then(function () {
+                                            var cdt;
+
+                                            api._router.$container.html(data)
+                                                .delay(50)
+                                                .animate({ opacity: '1.0' }, 300);
+                                            cdt = api._router.$container.children(':first').data('controller');
+                                            if (cdt) {
+                                                api.Utils.require(cdt)
+                                                    .then(function (ctrler) {
+                                                        api._router.controller = (ctrler || [])[0];
+                                                        if (api._router.controller && (typeof api._router.controller.init === 'function')) {
+                                                            api._router.controller.init(api._router.$container);
+                                                        }
+                                                    });
+                                            }
+                                        });
+                                    }
+                                }, function (xhr, textStatus, thrownError) {
+                                    if (api._router.$container) {
+                                        api._router.$container.animate({ opacity: '1.0' }, 300);
+                                    }
+                                });
+                        }
+                    });
+                    return Promise.resolve(api._router);
+                });
+        };
         api.Utils = {
             ismobile: (/iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase())),
             isFunction: function (obj) {
@@ -1045,8 +1117,9 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     });
             },
             require: function (reqs) {
+                var args = Array.isArray(reqs) ? reqs : Array.prototype.slice.call(arguments);
                 return new Promise(function (resolve, reject) {
-                    var args = Array.isArray(reqs) ? reqs : Array.prototype.slice.call(arguments);
+
                     require(args, function () {
                         var cpms = Array.prototype.slice.call(arguments);
                         resolve(cpms);
@@ -1087,6 +1160,23 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                             }
                         });
                 });
+            },
+            hookUserUI: function (force) {
+                if (!force &&
+                    ($(document.body).hasClass('active-user') || $(document.body).hasClass('anonymous-user'))) {
+                    return;
+                }
+                if (api.User.current()) {
+                    $(document.body).removeClass('anonymous-user').addClass('active-user');
+                    api.User.current().getRoles()
+                        .then(function (urls) {
+                            $.each(urls, function (uri) {
+                                $(document.body).addClass('role-' + uri.get('name'));
+                            });
+                        });
+                } else {
+                    $(document.body).removeClass('active-user').addClass('anonymous-user');
+                }
             },
             hexOctet: function () {
                 return Math.floor(
@@ -1252,6 +1342,34 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                 });
 
         };
+
+        api.setVolatileStorage = function (volatile) {
+            var vlt = (typeof volatile === 'undefined' || !volatile),
+                storage = vlt ? window.sessionStorage : window.localStorage;
+
+            window.localStorage.setItem('stg:volatile', vlt ? 'yes' : 'no');
+            api.CoreManager.setStorageController({
+                async: 0,
+                getItem: function (path) {
+                    return storage.getItem(path);
+                },
+                setItem: function (path, value) {
+                    try {
+                        storage.setItem(path, value);
+                    } catch (e) {
+                    }
+                },
+                removeItem: function (path) {
+                    storage.removeItem(path);
+                },
+                clear() {
+                    storage.clear();
+                }
+            });
+        };
+        if (window.localStorage.getItem('stg:volatile') === 'yes') {
+            api.setVolatileStorage();
+        }
         return api;
     });
 

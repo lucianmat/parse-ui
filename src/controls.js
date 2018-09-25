@@ -1,11 +1,11 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define('box/controls', ['Box'], factory);
+        define(['Box', 'jQyery'], factory);
     } else {
         var exports = {};
-        factory(Box);
+        factory(Box, $);
     }
-}(this, function (api) {
+}(this, function (api, $) {
     var moment;
 
     api.UI = api.UI || {};
@@ -225,7 +225,7 @@
                                 self.childrens.push(control);
                             }
                         })
-                        .fail(function (err) {
+                        .catch(function (err) {
                             api.Trace.captureException(err);
                         });
                     cntps.push(vp);
@@ -569,7 +569,7 @@
                             self._records = response;
                             self.trigger('changed', response);
                             callback(dresp);
-                        }).fail(function (err) {
+                        }).catch(function (err) {
                             api.Trace.captureException(err);
                             self.trigger('changed');
                             callback({
