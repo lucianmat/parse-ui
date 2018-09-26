@@ -940,6 +940,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                                 url: api._router._lastRouteResolved.url + '.html',
                                 dataType: 'html',
                                 beforeSend: function (xhr) {
+                                    api._router.events.trigger('loading');
                                     if (api._router.$container) {
                                         api._router.$container.css({ opacity: '0.0' });
                                     }
@@ -958,10 +959,12 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
 
                                         pms.then(function () {
                                             var cdt;
-
                                             api._router.$container.html(data)
                                                 .delay(50)
                                                 .animate({ opacity: '1.0' }, 300);
+                                            api._router.events.trigger('loaded');
+                                            api._router.updatePageLinks();
+                                            
                                             cdt = api._router.$container.children(':first').data('controller');
                                             if (cdt) {
                                                 api.Utils.require(cdt)
@@ -975,6 +978,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                                         });
                                     }
                                 }, function (xhr, textStatus, thrownError) {
+                                    api._router.events.trigger('error');
                                     if (api._router.$container) {
                                         api._router.$container.animate({ opacity: '1.0' }, 300);
                                     }
