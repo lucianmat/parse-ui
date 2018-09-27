@@ -231,7 +231,7 @@ var CDN_ROOT = typeof __box !== 'undefined' ? __box.CDN || '' : '',
             d3: CDN_ROOT + '/vendor/d3/d3',
             c3: CDN_ROOT + '/vendor/c3/c3',
             'require-js': CDN_ROOT + '/vendor/require-css/css',
-            'notify': CDN_ROOT + '/vendor/remarkable-bootstrap-notify/bootstrap-notify.min',
+            'notification': CDN_ROOT + '/vendor/remarkable-bootstrap-notify/bootstrap-notify.min',
             filestack: '//static.filestackapi.com/v3/filestack',
             tinycolor: CDN_ROOT + '/vendor/tinycolor/tinycolor',
             'bootstrap-dialog': CDN_ROOT + '/vendor/bootstrap3-dialog/js/bootstrap-dialog.min',
@@ -511,15 +511,15 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     return value;
                 });
             img.src = api.Trace.reportUrl + '?appId=' + encodeURIComponent(api.applicationId) + '&jsKey=' + encodeURIComponent(api.javaScriptKey) + '&report=' + encodeURIComponent(jserr);
-            if ($.smallBox) {
+            if ($.notify) {
                 if (window.scrollTo) {
                     window.scrollTo(0, 0);
                 }
-                $.smallBox({
+                $.notify({
                     title: "Got an error",
-                    content: "Hit an error again :( .<br/> But we log and analyze and resolve asap. <br/>" + (stackInfo.message ? '(<i>' + stackInfo.message + '</i>)' : ''),
+                    message: "Hit an error again :( .<br/> But we log and analyze and resolve asap. <br/>" + (stackInfo.message ? '(<i>' + stackInfo.message + '</i>)' : ''),
                     color: "#b7173c",
-                    timeout: 5000,
+                    timer: 5000,
                     icon: "fa fa-bug"
                 });
             }

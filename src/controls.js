@@ -503,9 +503,9 @@
             .then(function (job) {
                 return api.Utils.require('notification')
                     .then(function () {
-                        $.smallBox({
-                            title: 'Export data task created',
-                            color: "#b7173c",
+                        $.notify({
+                            message: 'Export data task created',
+                            type: "info",
                             timeout: 5000,
                             icon: "fa fa-download"
                         });
@@ -1148,8 +1148,18 @@
                     .then(function () {
                         if (typeof self.options.onUpdated === 'function') {
                             self.options.onUpdated(self);
-                        }
+                        } 
+                        
                         self.trigger('saved');
+                        api.Utils.require('notification')
+                        .then(function () {
+                            $.notify({
+                                message: "Updated !",
+                                type: "info",
+                                icon: "fa fa-info-circle"
+                            });
+                        });
+
                         if (!self.model && self.model.id && self._useEditorLock && api.Socket.hasClient()) {
                             self._timerSync = { className: self.model.className, objectId: self.model.id };
                             self._lockSync();
@@ -1523,17 +1533,22 @@
             vm.find('a.text-danger:last').click(function (evt) {
                 var vd = $container.data();
                 evt.preventDefault();
-                api.Utils.require('notification')
+                api.Utils.require('bootstrap-dialog')
                     .then(function () {
-                        $.SmartMessageBox({
-                            title: "<i class='fa fa-trash-o text-danger'></i> Remove <i>" + img.fileName + "</i> ?",
-                            buttons: '[No][Yes]'
-
-                        }, function (ButtonPressed) {
-                            if (ButtonPressed == "Yes") {
-                                var vf = vd.bmField.split('$')[1];
-                                self.model.set(vf, null);
-                                self.renderImage(null, $container);
+                        BootstrapDialog.confirm({
+                            title: 'Atenție',
+                            type: BootstrapDialog.TYPE_WARNING,
+                            message: "<i class='fa fa-trash-o text-danger'></i> Remove <i>" + img.fileName + "</i> ?",
+                            closable: true,
+                            btnCancelLabel: '<i class="fa fa-ban"></i> Cancel !',
+                            btnOKLabel: '<i class="fa fa-trash-o"></i> Delete!',
+                            btnOKClass: 'btn-danger',
+                            callback: function (result) {
+                                if (result) {
+                                    var vf = vd.bmField.split('$')[1];
+                                    self.model.set(vf, null);
+                                    self.renderImage(null, $container);
+                                }
                             }
                         });
                     });
@@ -1595,10 +1610,10 @@
                 pm = pm.then(function () {
                     return api.Utils.require('notification')
                         .then(function () {
-                            $.smallBox({
-                                title: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required',
-                                color: "#b7173c",
-                                timeout: 5000,
+                            $.notify({
+                                message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required',
+                                type: "danger",
+                                timer: 5000,
                                 icon: "fa fa-exclamation-circle"
                             });
                         });
