@@ -518,10 +518,11 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                 $.notify({
                     title: "Got an error",
                     message: "Hit an error again :( .<br/> But we log and analyze and resolve asap. <br/>" + (stackInfo.message ? '(<i>' + stackInfo.message + '</i>)' : ''),
-                    color: "#b7173c",
-                    timer: 5000,
                     icon: "fa fa-bug"
-                });
+                }, {
+                    type: 'danger',
+                    timer: 5000
+                    });
             }
         }
         api.Trace = {
@@ -1131,7 +1132,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
 
                     require(args, function () {
                         var cpms = Array.prototype.slice.call(arguments);
-                        resolve(isArray || args.length >1 ? cpms: cpms[0]);
+                        resolve(isArray || args.length > 1 ? cpms : cpms[0]);
                     }, function (err) {
                         api.Trace.captureException(err);
                         reject(err);

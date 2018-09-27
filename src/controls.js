@@ -506,9 +506,8 @@
                         $.notify({
                             message: 'Export data task created',
                             type: "info",
-                            timeout: 5000,
                             icon: "fa fa-download"
-                        });
+                        }, {timeout: 5000});
                     });
             }, function (err) {
                 api.Utils.require('notification')
@@ -1148,17 +1147,16 @@
                     .then(function () {
                         if (typeof self.options.onUpdated === 'function') {
                             self.options.onUpdated(self);
-                        } 
-                        
+                        }
+
                         self.trigger('saved');
                         api.Utils.require('notification')
-                        .then(function () {
-                            $.notify({
-                                message: "Updated !",
-                                type: "info",
-                                icon: "fa fa-info-circle"
+                            .then(function () {
+                                $.notify({
+                                    message: "Updated !",
+                                    icon: "fa fa-info-circle"
+                                }, { type: "info"});
                             });
-                        });
 
                         if (!self.model && self.model.id && self._useEditorLock && api.Socket.hasClient()) {
                             self._timerSync = { className: self.model.className, objectId: self.model.id };
@@ -1612,10 +1610,11 @@
                         .then(function () {
                             $.notify({
                                 message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required',
-                                type: "danger",
-                                timer: 5000,
                                 icon: "fa fa-exclamation-circle"
-                            });
+                            }, {
+                                type: "danger",
+                                timer: 5000
+                                });
                         });
                 });
             }
