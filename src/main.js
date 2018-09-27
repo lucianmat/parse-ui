@@ -231,8 +231,10 @@ var CDN_ROOT = typeof __box !== 'undefined' ? __box.CDN || '' : '',
             d3: CDN_ROOT + '/vendor/d3/d3',
             c3: CDN_ROOT + '/vendor/c3/c3',
             'require-js': CDN_ROOT + '/vendor/require-css/css',
+            'notify': CDN_ROOT + '/vendor/remarkable-bootstrap-notify/bootstrap-notify.min',
             filestack: '//static.filestackapi.com/v3/filestack',
             tinycolor: CDN_ROOT + '/vendor/tinycolor/tinycolor',
+            'bootstrap-dialog': CDN_ROOT + '/vendor/bootstrap3-dialog/js/bootstrap-dialog.min',
             tinygradient: CDN_ROOT + '/vendor/tinygradient/tinygradient',
             Rainbowvis: CDN_ROOT + '/vendor/rainbowvis.js/rainbowvis'
         },
@@ -255,6 +257,9 @@ var CDN_ROOT = typeof __box !== 'undefined' ? __box.CDN || '' : '',
             },
             export_renderers: {
                 deps: ['pivot']
+            },
+            'bootstrap-dialog': {
+                deps: ['bootstrap', 'css!' + CDN_ROOT + '/vendor/bootstrap3-dialog/css/bootstrap-dialog.min.css']
             },
             c3: {
                 deps: ['d3',
@@ -920,9 +925,8 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
             }
             hash = hash || '#!';
             return api.Utils.require('Navigo')
-                .then(function (resp) {
-                    var olv,
-                        Navigo = resp[0];
+                .then(function (Navigo) {
+                    var olv;
 
                     api._router = new Navigo(root, useHash, hash);
                     api._router.events = Object.assign({}, Events);
@@ -964,12 +968,12 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                                                 .animate({ opacity: '1.0' }, 300);
                                             api._router.events.trigger('loaded');
                                             api._router.updatePageLinks();
-                                            
+
                                             cdt = api._router.$container.children(':first').data('controller');
                                             if (cdt) {
                                                 api.Utils.require(cdt)
                                                     .then(function (ctrler) {
-                                                        api._router.controller = (ctrler || [])[0];
+                                                        api._router.controller = ctrler;
                                                         if (api._router.controller && (typeof api._router.controller.init === 'function')) {
                                                             api._router.controller.init(api._router.$container);
                                                         }
@@ -1121,12 +1125,13 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     });
             },
             require: function (reqs) {
-                var args = Array.isArray(reqs) ? reqs : Array.prototype.slice.call(arguments);
+                var isArray = Array.isArray(reqs),
+                    args = isArray ? reqs : Array.prototype.slice.call(arguments);
                 return new Promise(function (resolve, reject) {
 
                     require(args, function () {
                         var cpms = Array.prototype.slice.call(arguments);
-                        resolve(cpms);
+                        resolve(isArray || args.length >1 ? cpms: cpms[0]);
                     }, function (err) {
                         api.Trace.captureException(err);
                         reject(err);
@@ -1174,7 +1179,7 @@ define('Box', ['api', 'TraceKit', 'jQuery', 'lodash', 'require'],
                     $(document.body).removeClass('anonymous-user').addClass('active-user');
                     api.User.current().getRoles()
                         .then(function (urls) {
-                            $.each(urls, function (uri) {
+                            $.each(urls, function (ix, uri) {
                                 $(document.body).addClass('role-' + uri.get('name'));
                             });
                         });
