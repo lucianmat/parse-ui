@@ -1,0 +1,23 @@
+{
+  "name": "parse-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucianmat/parse-ui.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lucianmat/parse-ui/issues"
+  },
+  "homepage": "https://github.com/lucianmat/parse-ui#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-minify": "^3.1.0"
+  }
+}

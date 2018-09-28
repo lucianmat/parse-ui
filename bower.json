@@ -1,0 +1,17 @@
+{
+  "name": "parse-ui",
+  "homepage": "https://github.com/lucianmat/parse-ui",
+  "authors": [
+    "lucianmat <lucian.mat@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
