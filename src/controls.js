@@ -806,8 +806,8 @@
             };
         } else if (iv.type === 'Pointer') {
             vc.render = function (data) {
-                return data ? ("<a href=\"#\" data-object-id=\"" + data.id + "\" data-field-id=\"" + iv.field + "\" data-action=\"pointer\" data-target-class=\"" + data.className + "\" class=\"btn " + self.options.classButtons + " \"><i class=\"fa fa-search\"></i></a>" +
-                    (data.className === 'Files' ? " <a href=\"" + api.serverURL + "/storage/" + api.applicationId + "/" + data.id + "\" target=\"_blank\"><i class=\"fa fa-download\"></i></a>" : '')) : '';
+                return data ? (data.className ? ("<a href=\"#\" data-object-id=\"" + data.id + "\" data-field-id=\"" + iv.field + "\" data-action=\"pointer\" data-target-class=\"" + data.className + "\" class=\"btn " + self.options.classButtons + " \"><i class=\"fa fa-search\"></i></a>" +
+                    (data.className === 'Files' ? " <a href=\"" + api.serverURL + "/storage/" + api.applicationId + "/" + data.id + "\" target=\"_blank\"><i class=\"fa fa-download\"></i></a>" : '')) : data) : '';
             };
         } else if (iv.type === 'Relation') {
             vc.render = function (data) {
@@ -904,6 +904,7 @@
 
             if (search && dc.data && dc.type) {
                 switch (dc.type.toLowerCase()) {
+                    case 'pointer':
                     case 'string':
                         if (dc.data) {
                             if (dc.data.indexOf('.') === -1) {
