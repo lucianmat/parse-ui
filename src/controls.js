@@ -707,8 +707,16 @@
                     });
                 }
                 if (this.options.createNew && (typeof this.options.onCreate === 'function')) {
+                    var aclc = 'btn btn-default btn-add';
+                    if (this.options.aclCreate && this.options.aclCreate !== '*') {
+                        $.each(this.options.aclCreate.split(' '), function (ix, arc) {
+                            if (arc) {
+                                aclc = aclc + ' req-role-' + arc;
+                            }
+                        });
+                    }
                     dtOptions.buttons.push({
-                        className: 'btn btn-default btn-add',
+                        className: aclc,
                         text: '<i class="fa fa-plus"></i>',
                         action: self.options.onCreate.bind(self)
                     });
@@ -1262,23 +1270,28 @@
         this.model = obj;
         this.__files = [];
 
-        if (this.model) {
-            this.readOnly = this.options.readOnly || !api.Utils.hasAccess(this.model.getACL());
+        if (this.model && this.model.id) {
+            this.readOnly = this.options.readOnly;
             if (this.readOnly) {
                 this.$('.readonly-field').show();
-                this.$(this.options.removeButtonClass).hide();
-                this.$(this.options.createButtonClass).hide();
+                this.$(this.options.removeButtonClass).addClass('disabled');
+                this.$(this.options.createButtonClass).addClass('disabled');
             } else {
+                //  || !api.Utils.hasAccess(this.model.getACL())
+                //ACL-check
                 this.$(this.options.createButtonClass).html(this.options.updateButtonText);
-                this.$(this.options.removeButtonClass).show();
-                this.$(this.options.createButtonClass).show();
+                // check class ACL for delete
+                this.$(this.options.removeButtonClass).removeClass('disabled');
+                this.$(this.options.createButtonClass).removeClass('disabled');
             }
         } else {
+             //ACL-check
+           
             this.readOnly = false;
             this.$('.readonly-field').hide();
-            this.$(this.options.removeButtonClass).hide();
+            this.$(this.options.removeButtonClass).addClass('disabled');
             this.$(this.options.createButtonClass).html(this.options.createButtonText);
-            this.$(this.options.createButtonClass).show();
+            this.$(this.options.createButtonClass).removeClass('disabled');
         }
 
         this.$(filter).each(function () {
@@ -2036,7 +2049,6 @@
         if (typeof this.options.createNew === 'undefined') {
             this.options.createNew = !!this.$el.data('acl-create');
         }
-
 
         api.UI.Control.call(this, el);
     }
