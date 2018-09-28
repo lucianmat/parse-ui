@@ -179,7 +179,7 @@ var CDN_ROOT = typeof __box !== 'undefined' ? __box.CDN || '' : '',
             app: CDN_ROOT + "/js/",
             vendor: CDN_ROOT + "/vendor",
             api: CDN_ROOT + '/vendor/Parse-SDK-JS/parse.min',
-            controls: CDN_ROOT + '/vendor/parse-ui/controls',
+            controls: CDN_ROOT + '/vendor/parse-ui/controls-min',
             jQuery: (!!document.querySelector && !!window.localStorage && !!window.addEventListener) ?
                 CDN_ROOT + "/vendor/jquery/jquery.min" :
                 ["//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min"],
