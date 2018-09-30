@@ -507,7 +507,7 @@
                             message: 'Export data task created',
                             type: "info",
                             icon: "fa fa-download"
-                        }, {timeout: 5000});
+                        }, { timeout: 5000 });
                     });
             }, function (err) {
                 api.Utils.require('notification')
@@ -1097,7 +1097,7 @@
 
         this.readOnly = true;
         this.selects = this.selects || {};
-        this.files = this.selects || {};
+        this.files = this.files || {};
 
         api.UI.Control.call(this, element);
     }
@@ -1164,7 +1164,7 @@
                                 $.notify({
                                     message: "Updated !",
                                     icon: "fa fa-info-circle"
-                                }, { type: "info"});
+                                }, { type: "info" });
                             });
 
                         if (!self.model && self.model.id && self._useEditorLock && api.Socket.hasClient()) {
@@ -1286,8 +1286,8 @@
                 this.$(this.options.createButtonClass).removeClass('disabled');
             }
         } else {
-             //ACL-check
-           
+            //ACL-check
+
             this.readOnly = false;
             this.$('.readonly-field').hide();
             this.$(this.options.removeButtonClass).addClass('disabled');
@@ -1324,48 +1324,31 @@
                     }
                 }
                 pms = pms.then(function (frez) {
-                    return api.Utils.require('Flow')
-                        .then(function () {
-                            return Promise.all($.map(self.__files, function (flel) {
-                                var fdata = $(flel).data(),
-                                    vd = fdata.bmField.split('$')[1],
-                                    image,
-                                    vid, i;
+                    return Promise.all($.map(self.__files, function (flel) {
+                        var fdata = $(flel).data(),
+                            vd = fdata.bmField.split('$')[1],
+                            image,
+                            vid, i;
 
-                                if (obj) {
-                                    vid = obj.get(vd);
-                                    if (vid) {
-                                        for (i = 0; !image && i < frez.length; i++) {
-                                            if (frez[i].id === vid.id) {
-                                                image = frez[i].toJSON();
-                                            }
-                                        }
+                        if (obj) {
+                            vid = obj.get(vd);
+                            if (vid) {
+                                for (i = 0; !image && i < frez.length; i++) {
+                                    if (frez[i].id === vid.id) {
+                                        image = frez[i].toJSON();
                                     }
                                 }
-                                if (!self.files[fdata.bmField]) {
-                                    self.files[fdata.bmField] = {
-                                        el: flel,
-                                        Flow: new Flow({
-                                            target: '/api/storage/upload',
-                                            chunkSize: 1024 * 1024,
-                                            testChunks: true,
-                                            query: {
-                                                applicationId: api.applicationId,
-                                                className: self.options.className,
-                                                role: vd,
-                                                contentDisposition: 'attachment'
-                                            }
-                                        })
-                                    };
+                            }
+                        }
+                        if (!self.files[fdata.bmField]) {
+                            self.files[fdata.bmField] = {
+                                el: flel,
+                                role: vd
+                            };
+                        }
 
-                                    self.files[fdata.bmField].Flow.assignBrowse($(flel).parents('.btn-default')[0]);
-                                    self.files[fdata.bmField].Flow.assignDrop($(flel).parents('.input-file')[0]);
-
-                                }
-
-                                return self.renderImage(image, $(flel));
-                            }));
-                        });
+                        return self.renderImage(image, $(flel));
+                    }));
                 });
             }
 
@@ -1455,48 +1438,108 @@
                     return Promise.resolve();
                 }
                 return new Promise(function (resolve, reject) {
-                    var $pel = $(img.el).parents('.input-file'),
-                        finp = $pel.find("input[type=\"file\"]").eq(0);
+                    var file,
+                        fp,
+                        $pel = $(img.el).parents('.input-file'),
+                        finp = ($pel.find("input[type=\"file\"]") || [])[0];
+
+                    if (!finp || !finp.files || !finp.files.length) {
+                        return;
+                    }
+                    file = finp.files[0];
+
                     $pel.find('.file-edit').hide();
+                    $pel.find('.fileinput-button').hide();
+
                     $pel.find('.progress').show();
+                    fp = {
+                        role: img.role,
+                        className: self.options.className,
+                        name: file.name,
+                        contentType: file.type || 'application/octet-stream'
+                    };
+                    if (self.model && self.model.id) {
+                        fp.objectId = self.model.id;
+                    }
+                    return api.Cloud.run('createPresignedPost', fp)
+                        .then(function (sgData) {
+                            var form = new FormData();
+                            // form.append('Bucket', 'test-box-devel');
+                            api.$.each(sgData.fields, function (fix, fdt) {
+                                form.append(fix, fdt);
+                            });
+                            form.append('file', file);
 
+                            if (sgData.file) {
+                                sgData.file.className = sgData.file.className || 'Files';
+                            }
+                            
+                            api.$.ajax({
+                                url: sgData.url,
+                                type: "POST",
+                                data: form,
+                                processData: false, //Work around #1
+                                contentType: false, //Work around #2
+                                success: function (rzi) {
+                                   return Promise.resolve()
+                                    .then(function () {
+                                        var po;
+                                        if (!sgData.file) {
+                                            return;
+                                        }
+                                        po = api.Object.fromJSON(sgData.file);
+                                        if (file.size) {
+                                            po.set('size', file.size);
+                                        }
+                                        if (file.lastModifiedDate) {
+                                            po.set('lastModified', file.lastModifiedDate);
+                                        }
+                                        po.set('contentType', file.type || 'application/octet-stream');
+                                        po.set('key', sgData.fields.key);
+                                        return po.save();
+                                    })
+                                    .then(function (fdb) {
+                                        var flDb = api.Object.fromJSON(sgData.file); 
+                                        $pel.find('.file-edit').show();
+                                        $pel.find('.file-edit').val('');
+                                        $pel.find('.fileinput-button').show();
+                                        $pel.find('.progress').hide();
+                                        $pel.find("input[type=\"file\"]").val('');
+                                        self.renderImage(fdb ?fdb.toJSON(): null, $pel).then(resolve, reject);
+                                    })
+                                    .then(resolve, reject);
+                                },
+                                error: function () {
+                                    alert("Failed");
+                                    $pel.find('.progress').hide();
+                                    $pel.find('.file-edit').show();
+                                    $pel.find('.fileinput-button').show();
+                                    reject();
+                                },
+                                xhr: function () {
+                                    myXhr = $.ajaxSettings.xhr();
+                                    if (myXhr.upload) {
+                                        myXhr.upload.addEventListener('progress', function (evt) {
+                                            if (evt.lengthComputable) {
+                                                var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
+                                                $pel.find('.progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
+                                                $pel.find('.progress .progress-bar').css({ width: percentComplete + '%' });
+                                            }
+                                        }, false);
+                                    } else {
+                                        $pel.find('.progress').hide();
+                                        console.log("Uploadress is not supported.");
+                                    }
+                                    return myXhr;
+                                }
+                            });
+                        }, function () {
+                            $pel.find('.progress').hide();
+                            $pel.find('.file-edit').show();
+                            $pel.find('.fileinput-button').show();
 
-                    img.Flow.addFile(finp[0].files[0]);
-
-                    img.Flow.off('fileSuccess');
-                    img.Flow.on('fileSuccess', function (file, message) {
-                        var jsmg = JSON.parse(message),
-                            fdb;
-
-                        jsmg.className = jsmg.className || 'Files';
-                        fdb = api.Object.fromJSON(jsmg);
-
-                        self.model.set(img.Flow.opts.query.role, fdb);
-                        updated = true;
-                        $pel.find('.file-edit').show();
-                        $pel.find('.file-edit').val('');
-                        $pel.find('.progress').hide();
-                        $pel.find("input[type=\"file\"]").val('');
-                        self.renderImage(fdb.toJSON(), $pel).then(resolve, reject);
-                    });
-
-                    img.Flow.off('fileError');
-                    img.Flow.on('fileError', function (file, message) {
-                        $pel.find('.file-edit').show();
-                        $pel.find('.progress').hide();
-
-                        reject(message);
-                    });
-
-                    img.Flow.off('fileProgress');
-                    img.Flow.on('fileProgress', function (file) {
-                        var vfp = Math.floor(file.progress() * 100);
-                        $pel.find('.progress span').html(vfp < 95 ? vfp + '%' : 'sending to cloud..');
-                        $pel.find('.progress .progress-bar').css({ width: vfp + '%' });
-                    });
-
-                    img.Flow.opts.query.objectId = self.model.id;
-                    img.Flow.upload();
+                            reject(message);
+                        });
                 });
             }))
             .then(function () {
@@ -1626,8 +1669,8 @@
                                 message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required',
                                 icon: "fa fa-exclamation-circle"
                             }, {
-                                type: "danger",
-                                timer: 5000
+                                    type: "danger",
+                                    timer: 5000
                                 });
                         });
                 });
