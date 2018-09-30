@@ -1463,7 +1463,8 @@
                     }
                     return api.Cloud.run('createPresignedPost', fp)
                         .then(function (sgData) {
-                            var form = new FormData();
+                            var po,
+                                form = new FormData();
                             // form.append('Bucket', 'test-box-devel');
                             api.$.each(sgData.fields, function (fix, fdt) {
                                 form.append(fix, fdt);
@@ -1472,8 +1473,9 @@
 
                             if (sgData.file) {
                                 sgData.file.className = sgData.file.className || 'Files';
+                                po = api.Object.fromJSON(sgData.file);
                             }
-                            
+
                             api.$.ajax({
                                 url: sgData.url,
                                 type: "POST",
@@ -1481,33 +1483,43 @@
                                 processData: false, //Work around #1
                                 contentType: false, //Work around #2
                                 success: function (rzi) {
-                                   return Promise.resolve()
-                                    .then(function () {
-                                        var po;
-                                        if (!sgData.file) {
-                                            return;
-                                        }
-                                        po = api.Object.fromJSON(sgData.file);
-                                        if (file.size) {
-                                            po.set('size', file.size);
-                                        }
-                                        if (file.lastModifiedDate) {
-                                            po.set('lastModified', file.lastModifiedDate);
-                                        }
-                                        po.set('contentType', file.type || 'application/octet-stream');
-                                        po.set('key', sgData.fields.key);
-                                        return po.save();
-                                    })
-                                    .then(function (fdb) {
-                                        var flDb = api.Object.fromJSON(sgData.file); 
-                                        $pel.find('.file-edit').show();
-                                        $pel.find('.file-edit').val('');
-                                        $pel.find('.fileinput-button').show();
-                                        $pel.find('.progress').hide();
-                                        $pel.find("input[type=\"file\"]").val('');
-                                        self.renderImage(fdb ?fdb.toJSON(): null, $pel).then(resolve, reject);
-                                    })
-                                    .then(resolve, reject);
+                                    return Promise.resolve()
+                                        .then(function () {
+                                            var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
+                                                so = [];
+
+                                            if (!sgData.file) {
+                                                return;
+                                            }
+                                            if (file.size) {
+                                                po.set('size', file.size);
+                                            }
+                                            if (file.lastModifiedDate) {
+                                                po.set('lastModified', file.lastModifiedDate);
+                                            }
+                                            po.set('key', sgData.fields.key);
+
+                                            so.push(po);
+                                            if (self.model) {
+                                                self.model.set(img.role, po);
+                                                so.push(self.model);
+                                            }
+
+                                            return api.Object.saveAll(so, vo)
+                                                .then(function () {
+                                                    return po;
+                                                });
+                                        })
+                                        .then(function (fdb) {
+                                            var flDb = api.Object.fromJSON(sgData.file);
+                                            $pel.find('.file-edit').show();
+                                            $pel.find('.file-edit').val('');
+                                            $pel.find('.fileinput-button').show();
+                                            $pel.find('.progress').hide();
+                                            $pel.find("input[type=\"file\"]").val('');
+                                            self.renderImage(fdb ? fdb.toJSON() : null, $pel).then(resolve, reject);
+                                        })
+                                        .then(resolve, reject);
                                 },
                                 error: function () {
                                     alert("Failed");
