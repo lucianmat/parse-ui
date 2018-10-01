@@ -1498,6 +1498,9 @@
                                                 po.set('lastModified', file.lastModifiedDate);
                                             }
                                             po.set('key', sgData.fields.key);
+                                            if (sgData.fields.ACL === 'public-read') {
+                                                po.set('url', sgData.url + '/' + sgData.fields.key);
+                                            }
 
                                             so.push(po);
                                             if (self.model) {
@@ -1581,7 +1584,7 @@
             rp = Promise.resolve();
 
         if (img) {
-            var url = (img.url && img.publicRead ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId),
+            var url = (img.url ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId),
                 vm = $container.parents('.file-placeholder').find('.file-list');
 
             if (!vm.length) {
@@ -1591,7 +1594,7 @@
             vm.empty();
             vm.append(self.options.imageFormat.format({
                 display: img.contentType && img.contentType.indexOf('image/') === 0 ? '<img src="' + url + '">' : '<i class="fa fa-file"></i>',
-                name: img.fileName,
+                name: img.name,
                 id: img.objectId,
                 url: url,
                 size: img.size.toByteSize()
@@ -1601,20 +1604,33 @@
                 var vd = $container.data();
                 evt.preventDefault();
                 api.Utils.require('bootstrap-dialog')
-                    .then(function () {
+                    .then(function (BootstrapDialog) {
                         BootstrapDialog.confirm({
                             title: 'Atenție',
                             type: BootstrapDialog.TYPE_WARNING,
-                            message: "<i class='fa fa-trash-o text-danger'></i> Remove <i>" + img.fileName + "</i> ?",
+                            message: "<i class='fa fa-trash-o text-danger'></i> Remove <i>" + img.name + "</i> ?",
                             closable: true,
                             btnCancelLabel: '<i class="fa fa-ban"></i> Cancel !',
                             btnOKLabel: '<i class="fa fa-trash-o"></i> Delete!',
                             btnOKClass: 'btn-danger',
                             callback: function (result) {
                                 if (result) {
-                                    var vf = vd.bmField.split('$')[1];
+                                    var ots, vf = vd.bmField.split('$')[1],
+                                        img;
+
+                                    if (self.options.useMasterKey) {
+                                        ots = { useMasterKey: true };
+                                    }
+                                    img = self.model.get(vf);
                                     self.model.set(vf, null);
-                                    self.renderImage(null, $container);
+                                    if (img) {
+                                        img.set('purged', true);
+                                    }
+                                    return api.Object.saveAll([img, self.model])
+
+                                        .then(function () {
+                                            self.renderImage(null, $container);
+                                        });
                                 }
                             }
                         });
@@ -1847,98 +1863,115 @@
                 },
                 onImageUpload: function (files) {
                     var editor = $(this).data('summernote').modules.editor,
-                        uploader;
+                        vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
+                        pms = Promise.resolve(),
+                        role = self.options.fileRole || 
+                            ($el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false) ||
+                            'attachment',
+                        file = files[0];
 
-                    api.Utils.require('Flow')
-                        .then(function () {
-                            if (self.model && !self.model.isNew()) {
-                                return;
-                            }
-                            if (typeof self.save === 'function') {
-                                return self.save();
-                            }
-                            return self.update()
-                                .then(function () {
-                                    var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
-                                    return self.model.save({}, vo);
-                                })
-                                .catch(function (err) {
-                                    api.Utils.require('notification')
-                                        .then(function () {
-                                            api.Trace.captureException(err);
-                                        });
-                                    if (typeof self.options.onError === 'function') {
-                                        self.options.onError(err);
-                                    }
-                                });
-
-                        })
-                        .then(function () {
-                            return new Promise(function (resolve, reject) {
-                                var vpms = self.options.fileRole ||
-                                    $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
-                                    'attachment';
-
-                                editor.saveRange();
-                                $el.parent().find('.summer-progress').show();
-
-                                uploader = new Flow({
-                                    target: '/api/storage/upload',
-                                    chunkSize: 1024 * 1024,
-                                    testChunks: true,
-                                    query: {
-                                        applicationId: api.applicationId,
-                                        className: self.model.className,
-                                        role: vpms,
-                                        objectId: self.model.id
-                                    }
-                                });
-
-                                uploader.addFile(files[0]);
-                                uploader.on('fileSuccess', function (file, message) {
-                                    var jsmg = JSON.parse(message),
-                                        fdb,
-                                        vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
-
-                                    jsmg.className = jsmg.className || 'Files';
-
-                                    fdb = api.Object.fromJSON(jsmg);
-                                    self.model.relation('attachment').add(fdb);
-                                    self.trigger('saving');
-                                    return self.model.save({}, vo)
-                                        .then(function () {
-                                            self.trigger('saved');
-                                            editor.restoreRange();
-
-                                            editor.insertImage('/api/storage/' + api.applicationId + '/' + jsmg.objectId, jsmg.fileName);
-                                            $el.parent().find('.summer-progress').hide();
-                                            resolve();
-                                        }).catch(function (err) {
-                                            reject(err);
-                                        });
-                                });
-                                uploader.on('fileProgress', function (file) {
-                                    var vfp = Math.floor(file.progress() * 100);
-                                    $el.parent().find('.progress span').html(vfp < 95 ? vfp + '%' : 'sending to cloud..');
-                                    $el.parent().find('.progress .progress-bar').css({ width: vfp + '%' });
-                                });
-                                uploader.on('fileError', function (file, message) {
-                                    $el.parent().find('.summer-progress').hide();
-                                    reject(message);
-                                });
-                                uploader.upload();
-                            });
-
-                        })
-                        .catch(function (err) {
-                            api.Utils.require('notification')
-                                .then(function () {
-                                    api.Trace.captureException(err);
-                                });
-                            if (typeof self.options.onError === 'function') {
-                                self.options.onError(err);
-                            }
+                    if (self.model && self.model.isNew()) {
+                        pms = pms.then(function () {
+                            return pms.save({}, vo);
                         });
+                    }
+                    return pms.then(function () {
+                        var fp,
+                            vpms = self.options.fileRole ||
+                            $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
+                            'attachment';
+
+                        $el.parent().find('.summer-progress').show();
+                        fp = {
+                            role: role,
+                            className: self.options.className,
+                            name: file.name,
+                            inline : true,
+                            contentType: file.type || 'application/octet-stream'
+                        };
+                        if (self.model && self.model.id) {
+                            fp.objectId = self.model.id;
+                        }
+                        return api.Cloud.run('createPresignedPost', fp)
+                        .then(function (sgData) {
+                            var po,
+                                form = new FormData();
+                            // form.append('Bucket', 'test-box-devel');
+                            api.$.each(sgData.fields, function (fix, fdt) {
+                                form.append(fix, fdt);
+                            });
+                            form.append('file', file);
+
+                            if (sgData.file) {
+                                sgData.file.className = sgData.file.className || 'Files';
+                                po = api.Object.fromJSON(sgData.file);
+                            }
+
+                            return new Promise(function (resolve, reject) {
+                                api.$.ajax({
+                                    url: sgData.url,
+                                    type: "POST",
+                                    data: form,
+                                    processData: false, //Work around #1
+                                    contentType: false, //Work around #2
+                                    success: function (rzi) {
+                                        return Promise.resolve()
+                                            .then(function () {
+                                           
+                                                if (!sgData.file) {
+                                                    return;
+                                                }
+                                                if (file.size) {
+                                                    po.set('size', file.size);
+                                                }
+                                                if (file.lastModifiedDate) {
+                                                    po.set('lastModified', file.lastModifiedDate);
+                                                }
+                                                po.set('key', sgData.fields.key);
+                                                if (sgData.fields.ACL === 'public-read') {
+                                                    po.set('url', sgData.url + '/' + sgData.fields.key);
+                                                }
+                                                return po.save({}, vo);
+                                            })
+                                            .then(function (jsmg) {
+                                                editor.restoreRange();
+                                                if (jsmg) {
+                                                    editor.insertImage(api.serverURL + '/storage/' + api.applicationId + '/' + jsmg.id, jsmg.get('name'));
+                                                }
+                                               
+                                                $el.parent().find('.summer-progress').hide();
+                                                resolve();
+                                            })
+                                            .then(resolve, reject);
+                                    },
+                                    error: function () {
+                                        $el.parent().find('.summer-progress').hide();
+                                        reject();
+                                    },
+                                    xhr: function () {
+                                        myXhr = $.ajaxSettings.xhr();
+                                        if (myXhr.upload) {
+                                            myXhr.upload.addEventListener('progress', function (evt) {
+                                                if (evt.lengthComputable) {
+                                                    var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
+                                                    $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
+                                                    $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
+                                                }
+                                            }, false);
+                                        } else {
+                                            $el.parent().find('.summer-progress').hide();
+                                            console.log("Uploadress is not supported.");
+                                        }
+                                        return myXhr;
+                                    }
+                                });
+                            });
+                           
+                        }, function (err) {
+                            $el.parent().find('.summer-progress').hide();
+                          //  reject(err.message || err);
+                        });
+                    });
 
                 }
             }
