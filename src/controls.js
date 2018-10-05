@@ -293,6 +293,8 @@
         this.options.field = this.options.field || this.$el.data('bm-field').split('$')[1];
         this.options.parentClass = this.options.parentClass || this.$el.data('bm-field').split('$')[0];
         this.options.searchFor = this.options.searchFor || $(element).data('search-for') || api.UI.Select.defaults.mapSearch[this.options.className] || 'name';
+        this.options.display = this.options.display || $(element).data('display');
+
         this.options.relation = this.options.relation || (this.$el.data('field-type') === 'Relation');
         this.options.preload = this.options.preload || !!this.$el.data('preload');
 
@@ -319,6 +321,15 @@
 
                     self.query = o.query || new api.Query(o.className);
 
+                    if (o.display && (o.display.indexOf('.') !== -1)) {
+                        o.display.split(';').forEach(function (uu) {
+                            var vd = uu.split('.');
+                            if (vd.length>1) {
+                                self.query.include(vd[0]);
+                            }
+                        });
+                    }
+
                     if (!$.fn.select2) {
                         rz = api.Utils.require(['select2']);
                     }
@@ -333,7 +344,10 @@
                             return self.query.find(vq)
                                 .then(function (ri) {
                                     var rht = $.map(ri, function (ritm) {
-                                        return '<option value="' + encodeURI(ritm.id) + '">' + ritm.get(self.options.searchFor) + '</option>';
+                                        return '<option value="' + encodeURI(ritm.id) + '">' +
+                                            (self.options.display || self.options.searchFor).split(',').map(function (fi) {
+                                                return ritm.get(fi) || '';
+                                            }).join(', ') + '</option>';
                                     }).join('');
                                     self.$el.html(rht);
                                     self.$el.select2($.extend({
@@ -352,7 +366,10 @@
                                 delay: 250,
                                 transport: function (params, success, failure) {
 
-                                    self.query.matches(self.options.searchFor, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
+                                    self.options.searchFor.split(',').forEach(function (fi) {
+                                        self.query.matches(fi, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
+                                    });
+
                                     self.query.find(vq)
                                         .then(function (rz) {
                                             success(rz);
@@ -361,9 +378,24 @@
                                         });
                                 },
                                 processResults: function (data, params) {
+                                    var spl = (self.options.display || self.options.searchFor).split(',');
+
                                     return {
                                         results: $.map(data, function (ri) {
-                                            return { id: ri.id, text: ri.get(self.options.searchFor) };
+                                            return {
+                                                id: ri.id,
+                                                text: spl.map(function (fi) {
+                                                        var vd = fi.split('.'),
+                                                        lv = fi,
+                                                        ob = ri;
+
+                                                        if (vd.length>1) {
+                                                            ob = ri.get(vd[0]);
+                                                            lv = vd[1];
+                                                        }
+                                                        return ob.get(lv) || '';
+                                                    }).join(', ')
+                                            };
                                         })
                                     };
                                 }
@@ -1865,7 +1897,7 @@
                     var editor = $(this).data('summernote').modules.editor,
                         vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
                         pms = Promise.resolve(),
-                        role = self.options.fileRole || 
+                        role = self.options.fileRole ||
                             ($el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false) ||
                             'attachment',
                         file = files[0];
@@ -1878,99 +1910,99 @@
                     return pms.then(function () {
                         var fp,
                             vpms = self.options.fileRole ||
-                            $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
-                            'attachment';
+                                $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
+                                'attachment';
 
                         $el.parent().find('.summer-progress').show();
                         fp = {
                             role: role,
                             className: self.options.className,
                             name: file.name,
-                            inline : true,
+                            inline: true,
                             contentType: file.type || 'application/octet-stream'
                         };
                         if (self.model && self.model.id) {
                             fp.objectId = self.model.id;
                         }
                         return api.Cloud.run('createPresignedPost', fp)
-                        .then(function (sgData) {
-                            var po,
-                                form = new FormData();
-                            // form.append('Bucket', 'test-box-devel');
-                            api.$.each(sgData.fields, function (fix, fdt) {
-                                form.append(fix, fdt);
-                            });
-                            form.append('file', file);
-
-                            if (sgData.file) {
-                                sgData.file.className = sgData.file.className || 'Files';
-                                po = api.Object.fromJSON(sgData.file);
-                            }
-
-                            return new Promise(function (resolve, reject) {
-                                api.$.ajax({
-                                    url: sgData.url,
-                                    type: "POST",
-                                    data: form,
-                                    processData: false, //Work around #1
-                                    contentType: false, //Work around #2
-                                    success: function (rzi) {
-                                        return Promise.resolve()
-                                            .then(function () {
-                                           
-                                                if (!sgData.file) {
-                                                    return;
-                                                }
-                                                if (file.size) {
-                                                    po.set('size', file.size);
-                                                }
-                                                if (file.lastModifiedDate) {
-                                                    po.set('lastModified', file.lastModifiedDate);
-                                                }
-                                                po.set('key', sgData.fields.key);
-                                                if (sgData.fields.ACL === 'public-read') {
-                                                    po.set('url', sgData.url + '/' + sgData.fields.key);
-                                                }
-                                                return po.save({}, vo);
-                                            })
-                                            .then(function (jsmg) {
-                                                editor.restoreRange();
-                                                if (jsmg) {
-                                                    editor.insertImage(api.serverURL + '/storage/' + api.applicationId + '/' + jsmg.id, jsmg.get('name'));
-                                                }
-                                               
-                                                $el.parent().find('.summer-progress').hide();
-                                                resolve();
-                                            })
-                                            .then(resolve, reject);
-                                    },
-                                    error: function () {
-                                        $el.parent().find('.summer-progress').hide();
-                                        reject();
-                                    },
-                                    xhr: function () {
-                                        myXhr = $.ajaxSettings.xhr();
-                                        if (myXhr.upload) {
-                                            myXhr.upload.addEventListener('progress', function (evt) {
-                                                if (evt.lengthComputable) {
-                                                    var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
-                                                    $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
-                                                    $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
-                                                }
-                                            }, false);
-                                        } else {
-                                            $el.parent().find('.summer-progress').hide();
-                                            console.log("Uploadress is not supported.");
-                                        }
-                                        return myXhr;
-                                    }
+                            .then(function (sgData) {
+                                var po,
+                                    form = new FormData();
+                                // form.append('Bucket', 'test-box-devel');
+                                api.$.each(sgData.fields, function (fix, fdt) {
+                                    form.append(fix, fdt);
                                 });
+                                form.append('file', file);
+
+                                if (sgData.file) {
+                                    sgData.file.className = sgData.file.className || 'Files';
+                                    po = api.Object.fromJSON(sgData.file);
+                                }
+
+                                return new Promise(function (resolve, reject) {
+                                    api.$.ajax({
+                                        url: sgData.url,
+                                        type: "POST",
+                                        data: form,
+                                        processData: false, //Work around #1
+                                        contentType: false, //Work around #2
+                                        success: function (rzi) {
+                                            return Promise.resolve()
+                                                .then(function () {
+
+                                                    if (!sgData.file) {
+                                                        return;
+                                                    }
+                                                    if (file.size) {
+                                                        po.set('size', file.size);
+                                                    }
+                                                    if (file.lastModifiedDate) {
+                                                        po.set('lastModified', file.lastModifiedDate);
+                                                    }
+                                                    po.set('key', sgData.fields.key);
+                                                    if (sgData.fields.ACL === 'public-read') {
+                                                        po.set('url', sgData.url + '/' + sgData.fields.key);
+                                                    }
+                                                    return po.save({}, vo);
+                                                })
+                                                .then(function (jsmg) {
+                                                    editor.restoreRange();
+                                                    if (jsmg) {
+                                                        editor.insertImage(api.serverURL + '/storage/' + api.applicationId + '/' + jsmg.id, jsmg.get('name'));
+                                                    }
+
+                                                    $el.parent().find('.summer-progress').hide();
+                                                    resolve();
+                                                })
+                                                .then(resolve, reject);
+                                        },
+                                        error: function () {
+                                            $el.parent().find('.summer-progress').hide();
+                                            reject();
+                                        },
+                                        xhr: function () {
+                                            myXhr = $.ajaxSettings.xhr();
+                                            if (myXhr.upload) {
+                                                myXhr.upload.addEventListener('progress', function (evt) {
+                                                    if (evt.lengthComputable) {
+                                                        var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
+                                                        $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
+                                                        $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
+                                                    }
+                                                }, false);
+                                            } else {
+                                                $el.parent().find('.summer-progress').hide();
+                                                console.log("Uploadress is not supported.");
+                                            }
+                                            return myXhr;
+                                        }
+                                    });
+                                });
+
+                            }, function (err) {
+                                $el.parent().find('.summer-progress').hide();
+                                //  reject(err.message || err);
                             });
-                           
-                        }, function (err) {
-                            $el.parent().find('.summer-progress').hide();
-                          //  reject(err.message || err);
-                        });
                     });
 
                 }
