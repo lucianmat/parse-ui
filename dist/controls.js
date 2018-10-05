@@ -762,7 +762,7 @@
         return api.Utils.require(this._requires).then(function () {
             var ams = self._requires.indexOf('moment');
             if (ams !== -1) {
-                moment = arguments[ams];
+                moment = arguments[0][ams];
             }
             self.dt = self.$el.DataTable(dtOptions);
         });
