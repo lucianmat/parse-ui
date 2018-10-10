@@ -1,12 +1,18 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Box', 'jQuery'], factory);
+        define(['Box', 'module'], factory);
     } else {
         var exports = {};
-        factory(Box, $);
+        factory(Box);
     }
-}(this, function (api, $) {
-    var moment;
+}(this, function (api, module) {
+    var moment,
+        $ = api.$,
+        loadCss = typeof module.config().loadCss === 'undefined' ? true : module.config().loadCss;
+
+    if (typeof CDN_ROOT === 'undefined') {
+        CDN_ROOT = '';
+    }
 
     api.UI = api.UI || {};
 
@@ -324,7 +330,7 @@
                     if (o.display && (o.display.indexOf('.') !== -1)) {
                         o.display.split(';').forEach(function (uu) {
                             var vd = uu.split('.');
-                            if (vd.length>1) {
+                            if (vd.length > 1) {
                                 self.query.include(vd[0]);
                             }
                         });
@@ -385,16 +391,16 @@
                                             return {
                                                 id: ri.id,
                                                 text: spl.map(function (fi) {
-                                                        var vd = fi.split('.'),
+                                                    var vd = fi.split('.'),
                                                         lv = fi,
                                                         ob = ri;
 
-                                                        if (vd.length>1) {
-                                                            ob = ri.get(vd[0]);
-                                                            lv = vd[1];
-                                                        }
-                                                        return ob.get(lv) || '';
-                                                    }).join(', ')
+                                                    if (vd.length > 1) {
+                                                        ob = ri.get(vd[0]);
+                                                        lv = vd[1];
+                                                    }
+                                                    return ob.get(lv) || '';
+                                                }).join(', ')
                                             };
                                         })
                                     };
@@ -1027,11 +1033,15 @@
     PivotTable.prototype.constructor = PivotTable;
 
     PivotTable.prototype.initialize = function () {
-        var self = this;
+        var self = this,
+            rqs = ['export_renderers', 'c3_renderers'];
 
-        return api.Utils.require(['export_renderers', 'c3_renderers',
-            'css!' + CDN_ROOT + '/vendor/pivottable/pivot.min.css',
-            'css!' + CDN_ROOT + '/vendor/c3/c3.css'])
+        if (loadCss) {
+            rqs.push('css!' + CDN_ROOT + '/vendor/pivottable/pivot.min.css');
+            rqs.push('css!' + CDN_ROOT + '/vendor/c3/c3.css');
+        }
+
+        return api.Utils.require(rqs)
             .then(function () {
                 $.extend($.pivotUtilities.renderers,
                     $.pivotUtilities.c3_renderers,
@@ -1228,9 +1238,13 @@
                 vd = $input.data('bm-field');
 
             if (vd && vd.split('$')[0] === self.options.className) {
+                rqs = ['summernote'];
                 evt.preventDefault();
+                if (loadCss) {
+                    rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
+                }
                 $ip.removeClass('input-group').find('button').hide();
-                api.Utils.require(['summernote', 'css!' + CDN_ROOT + '/vendor/summernote/summernote']).then(function () {
+                api.Utils.require(rqs).then(function () {
                     self.wireSummernote($input);
                     $input.summernote('code', $input.val());
                 });
@@ -1800,7 +1814,11 @@
                     $input.parents('.input-group').removeClass('input-group').find('button').hide();
 
                     if (!$(this).data('summernote')) {
-                        return api.Utils.require(['summernote', 'css!/vendor/summernote/summernote']).then(function () {
+                        var rqs = ['summernote'];
+                        if (loadCss) {
+                            rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
+                        }
+                        return api.Utils.require(rqs).then(function () {
                             parent.wireSummernote($input);
                             $input.summernote('code', val);
                             changeEvent = 'summernote.change';

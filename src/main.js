@@ -1,6 +1,6 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Parse', 'TraceKit', 'jQuery', 'lodash', 'css', 'require'], factory);
+        define(['Parse',  'TraceKit', 'jQuery', 'lodash', 'css', 'require'], factory);
     } else {
         var exports = {};
         factory(Box, $);
