@@ -303,6 +303,7 @@
 
         this.options.relation = this.options.relation || (this.$el.data('field-type') === 'Relation');
         this.options.preload = this.options.preload || !!this.$el.data('preload');
+        this.options.withData = this.options.withData || !!this.$el.data('with-data');
 
         api.UI.Control.call(this, element,
             $.extend({}, api.UI.Select.defaults, options || {}));
@@ -363,6 +364,14 @@
                                 });
                         }
 
+                        if (o.withData) {
+                            self.$el.select2($.extend({
+                                width: o.relation ? '100%' : o.width,
+                                allowClear: true
+                            }, o));
+                            return;
+                        }
+
                         self.$el.select2($.extend({
                             width: o.relation ? '100%' : o.width,
                             minimumInputLength: self.options.minimumInputLength || 3,
@@ -421,7 +430,7 @@
 
     Select.prototype.val = function (val, oq) {
         var self = this;
-        if (this.options.preload) {
+        if (this.options.preload || this.options.withData) {
             self.$el.val(val).trigger('change');
         } else {
             this.p = this.p.then(function () {
