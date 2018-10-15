@@ -360,7 +360,7 @@
                                     self.$el.select2($.extend({
                                         width: o.relation ? '100%' : o.width,
                                         allowClear: self.options.bmRequired ? false : true,
-                                        placeholder: select.options.placeholder ||  "Select " + self.options.className
+                                        placeholder: self.options.placeholder ||  "Select " + self.options.className
                                     }, o));
                                 });
                         }
@@ -369,7 +369,7 @@
                             self.$el.select2($.extend({
                                 width: o.relation ? '100%' : o.width,
                                 allowClear: self.options.bmRequired ? false : true,
-                                placeholder: select.options.placeholder ||  "Select " + self.options.className
+                                placeholder: self.options.placeholder ||  "Select " + self.options.className
                             }, o));
                             return;
                         }
@@ -378,7 +378,7 @@
                             width: o.relation ? '100%' : o.width,
                             minimumInputLength: self.options.minimumInputLength || 3,
                             allowClear: self.options.bmRequired ? false : true,
-                            placeholder: "Select " + self.options.className,
+                            placeholder: self.options.placeholder || "Select " + self.options.className,
                             ajax: {
                                 delay: 250,
                                 transport: function (params, success, failure) {
