@@ -359,7 +359,8 @@
                                     self.$el.html(rht);
                                     self.$el.select2($.extend({
                                         width: o.relation ? '100%' : o.width,
-                                        allowClear: true
+                                        allowClear: self.options.bmRequired ? false : true,
+                                        placeholder: select.options.placeholder ||  "Select " + self.options.className
                                     }, o));
                                 });
                         }
@@ -367,7 +368,8 @@
                         if (o.withData) {
                             self.$el.select2($.extend({
                                 width: o.relation ? '100%' : o.width,
-                                allowClear: true
+                                allowClear: self.options.bmRequired ? false : true,
+                                placeholder: select.options.placeholder ||  "Select " + self.options.className
                             }, o));
                             return;
                         }
