@@ -362,6 +362,19 @@
                                         allowClear: self.options.bmRequired ? false : true,
                                         placeholder: self.options.placeholder ||  "Select " + self.options.className
                                     }, o));
+                                     
+                                    self.$el.on('select2:select', function () {
+                                        self.$el.data('select2').trigger('selection:update', {
+                                            data: $(this).val() ? $(this).select2('data') : []
+                                        });
+                                    });
+                                    if (!self.options.bmRequired) {
+                                        self.$el.on('select2:unselect', function (evt) {
+                                            self.$el.data('select2').trigger('selection:update', {
+                                                data: []
+                                            });
+                                        });
+                                    }
                                 });
                         }
 
