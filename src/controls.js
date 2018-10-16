@@ -360,9 +360,9 @@
                                     self.$el.select2($.extend({
                                         width: o.relation ? '100%' : o.width,
                                         allowClear: self.options.bmRequired ? false : true,
-                                        placeholder: self.options.placeholder ||  "Select " + self.options.className
+                                        placeholder: self.options.placeholder || "Select " + self.options.className
                                     }, o));
-                                     
+
                                     self.$el.on('select2:select', function () {
                                         self.$el.data('select2').trigger('selection:update', {
                                             data: $(this).val() ? $(this).select2('data') : []
@@ -1186,6 +1186,7 @@
 
     Editor.prototype.initialize = function () {
         var self = this,
+            rqs,
             pms = api.UI.Control.prototype.initialize.call(this);
 
         if (!this.options.readOnly && this.options.removeButtonClass) {
@@ -1269,6 +1270,25 @@
             this.$(this.options.createButtonClass).hide();
         }
 
+        if (this.$('[data-is-html]').length) {
+            var $inputs = this.$('[data-is-html]');
+            rqs = ['summernote']
+            if (loadCss) {
+                rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
+            }
+            api.Utils.require(rqs).
+                then(function () {
+                    $inputs.each(function ($ix, ip) {
+                        vd = $(this).data('bm-field');
+                        
+                        if (vd && vd.split('$')[0] === self.options.className) {
+                            self.wireSummernote($(ip));
+                            $(ip).summernote('code', $(ip).val());
+                        }
+                    });
+                });
+        }
+        
         this.$('.input-group-btn .btn').click(function (evt) {
             var $ip = $(evt.currentTarget).parents('.input-group'),
                 $input = $ip.find('input'),
@@ -1286,8 +1306,9 @@
                     $input.summernote('code', $input.val());
                 });
             }
-
         });
+
+
 
         this.$('select[data-field-target]').each(function () {
             var vd = $(this).data('bm-field'),
