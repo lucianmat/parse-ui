@@ -878,14 +878,10 @@
                                 global.dust = global.dust || dlnk;
                             }
                             dlnk.onLoad = function (name, cb) {
-                                var svr = dlnk.__templateRoot || __box.CDN || '/';
-                                if (svr && svr.lastIndexOf('/') !== svr.length - 1) {
-                                    svr = svr + '/';
-                                }
-                                api.Utils.require([svr + name + '.js'])
-                                    .then(function () {
-                                        cb();
-                                    });
+                                api.Utils.require([(dlnk.__templateRoot || api.Utils.__templateRoot || __box.CDN || '/') + name + '.js'])
+                                .then(function () {
+                                    cb();
+                                });
                             };
                             return dlnk;
                         });
