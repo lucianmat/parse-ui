@@ -2270,6 +2270,9 @@
                     self.grid.show();
                     self.editor.hide();
                     self.trigger('canceled');
+                    $('html, body').animate({
+                        scrollTop: self.grid.$el.offset().top - (self.options.scrollTopOffset || 150)
+                    }, 200);
                 }
             },
             opts = $.extend({}, vop, this.options);
