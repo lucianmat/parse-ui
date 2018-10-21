@@ -1,6 +1,6 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Parse',  'TraceKit', 'jQuery', 'lodash', 'css', 'require'], factory);
+        define(['Parse', 'TraceKit', 'jQuery', 'lodash', 'css', 'require'], factory);
     } else {
         var exports = {};
         factory(Box, $);
@@ -852,19 +852,6 @@
                 return api.Utils.diff.VALUE_UPDATED;
             }
         },
-        getFlow: function (options) {
-            return api.Utils.require('Flow')
-                .then(function (Flow) {
-                    var flow = new Flow(options);
-                    if (flow.support) {
-                        return flow;
-                    }
-                    return api.Utils.require('fusty-flow')
-                        .then(function (FustyFlow) {
-                            return new FustyFlow(options);
-                        });
-                });
-        },
         render: function (template, object) {
             return Promise.resolve()
                 .then(function () {
@@ -879,9 +866,9 @@
                             }
                             dlnk.onLoad = function (name, cb) {
                                 api.Utils.require([(dlnk.__templateRoot || api.Utils.__templateRoot || __box.CDN || '/') + name + '.js'])
-                                .then(function () {
-                                    cb();
-                                });
+                                    .then(function () {
+                                        cb();
+                                    });
                             };
                             return dlnk;
                         });
@@ -1162,6 +1149,11 @@
             api.serverURL = __box.serverURL || api.serverURL;
         }
     }
+
+    api.User._registerAuthenticationProvider({
+        getAuthType: function () { return 'anonymous'; },
+        restoreAuthentication: function () { return true; }
+    });
 
     return api;
 }));
