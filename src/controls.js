@@ -336,7 +336,9 @@
                             }
                         });
                     }
-
+                    if (o.order) {
+                        self.query._order = o.order.split(",");
+                    }
                     if (!$.fn.select2) {
                         rz = api.Utils.require(['select2']);
                     }
