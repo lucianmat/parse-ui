@@ -857,7 +857,8 @@
                 .then(function () {
                     if (typeof dust !== 'undefined') {
                         return dust;
-                    } 
+                    }
+                    define.amd.dust = true;
                     return api.Utils.require('dust-helpers')
                         .then(function (dcore) {
                             var dlnk = dcore || dust;
