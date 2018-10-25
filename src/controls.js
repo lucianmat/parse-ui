@@ -304,6 +304,7 @@
         this.options.relation = this.options.relation || (this.$el.data('field-type') === 'Relation');
         this.options.preload = this.options.preload || !!this.$el.data('preload');
         this.options.withData = this.options.withData || !!this.$el.data('with-data');
+        this.options.order = this.options.order || this.$el.data('order');
 
         api.UI.Control.call(this, element,
             $.extend({}, api.UI.Select.defaults, options || {}));

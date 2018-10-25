@@ -852,7 +852,7 @@
                 return api.Utils.diff.VALUE_UPDATED;
             }
         },
-        render: function (template, object) {
+        render: function (template, object, onLoad) {
             return Promise.resolve()
                 .then(function () {
                     if (typeof dust !== 'undefined') {
@@ -864,7 +864,7 @@
                             if (typeof exports === 'object' && typeof global === 'object') {
                                 global.dust = global.dust || dlnk;
                             }
-                            dlnk.onLoad = function (name, cb) {
+                            dlnk.onLoad = onLoad || function (name, cb) {
                                 api.Utils.require([(dlnk.__templateRoot || api.Utils.__templateRoot || __box.CDN || '/') + name + '.js'])
                                     .then(function () {
                                         cb();
