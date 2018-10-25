@@ -857,7 +857,7 @@
                 .then(function () {
                     if (typeof dust !== 'undefined') {
                         return dust;
-                    } // dermazim 
+                    } 
                     return api.Utils.require('dust-helpers')
                         .then(function (dcore) {
                             var dlnk = dcore || dust;
@@ -865,9 +865,9 @@
                                 global.dust = global.dust || dlnk;
                             }
                             dlnk.onLoad = onLoad || function (name, cb) {
-                                api.Utils.require([(dlnk.__templateRoot || api.Utils.__templateRoot || __box.CDN || '/') + name + '.js'])
-                                    .then(function () {
-                                        cb();
+                                api.Utils.require([name])
+                                    .then(function (arz) {
+                                        cb(null, arz && arz.length ? arz[0] : null);
                                     });
                             };
                             return dlnk;
