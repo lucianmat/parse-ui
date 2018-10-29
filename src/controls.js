@@ -340,6 +340,11 @@
                     if (o.order) {
                         self.query._order = o.order.split(",");
                     }
+                    
+                    if (o.include) {
+                        self.query.include(o.include);
+                    }
+
                     if (!$.fn.select2) {
                         rz = api.Utils.require(['select2']);
                     }
@@ -416,12 +421,7 @@
                                         self.query.matches(fi, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
                                     });
 
-                                    self.query.find(vq)
-                                        .then(function (rz) {
-                                            success(rz);
-                                        }, function (err) {
-                                            failure(err);
-                                        });
+                                    self.query.find(vq).then(success, failure);
                                 },
                                 processResults: function (data, params) {
                                     var spl = (self.options.display || self.options.searchFor).split(',');
