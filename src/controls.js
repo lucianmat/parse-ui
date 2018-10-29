@@ -340,7 +340,7 @@
                     if (o.order) {
                         self.query._order = o.order.split(",");
                     }
-                    
+
                     if (o.include) {
                         self.query.include(o.include);
                     }
@@ -414,8 +414,8 @@
                             allowClear: self.options.bmRequired ? false : true,
                             placeholder: self.options.placeholder || "Select " + self.options.className,
                             ajax: {
-                                delay: 250,
-                                transport: function (params, success, failure) {
+                                delay: self.options.delay || 250,
+                                transport: self.options.transport || function (params, success, failure) {
 
                                     self.options.searchFor.split(',').forEach(function (fi) {
                                         self.query.matches(fi, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
@@ -423,7 +423,7 @@
 
                                     self.query.find(vq).then(success, failure);
                                 },
-                                processResults: function (data, params) {
+                                processResults: self.options.processResults || function (data, params) {
                                     var spl = (self.options.display || self.options.searchFor).split(',');
 
                                     return {
