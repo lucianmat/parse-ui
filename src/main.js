@@ -693,6 +693,35 @@
                 this.trigger.apply(this, varg);
             }
         });
+
+    var _restController = api.CoreManager.getRESTController();
+    api.RestController = _.extend({
+        ajax: function (method, data, headers) {
+            var self = this;
+            return _restController.ajax(method, data, headers)
+                .catch(function (err) {
+                    var varg = ['error'].concat(Array.prototype.slice.call(arguments));
+
+                    self.trigger.apply(self, varg);
+                    api.Trace.captureException(err);
+                    return Promise.reject(err);
+                });
+        },
+        request: function (method, path, data, options) {
+            var self = this;
+            return _restController.request(method, path, data, options)
+                .catch(function (err) {
+                    var varg = ['error'].concat(Array.prototype.slice.call(arguments));
+
+                    self.trigger.apply(self, varg);
+                    api.Trace.captureException(err);
+                    return Promise.reject(err);
+                });
+        }
+    }, Events);
+
+    api.CoreManager.etRESTController(api.RestController);
+
     api.getRouter = function (root, useHash, hash) {
         if (api._router) {
             return Promise.resolve(api._router);
