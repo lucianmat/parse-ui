@@ -1114,7 +1114,7 @@
     };
 
     api.setVolatileStorage = function (volatile) {
-        var vlt = (typeof volatile === 'undefined' || !volatile),
+        var vlt = (typeof volatile === 'undefined' || !!volatile),
             storage = vlt ? window.sessionStorage : window.localStorage;
 
         window.localStorage.setItem('stg:volatile', vlt ? 'yes' : 'no');
