@@ -2161,7 +2161,7 @@
             }
             val = $.fn[bind].apply($(this), params);
 
-            if (data.fieldType === 'Number') {
+            if (data.fieldType === 'Number' || data.fieldType === 'slider') {
                 var lnm = parseFloat(val);
                 val = isNaN(lnm) ? null : lnm;
             } else if (data.fieldType === 'Boolean' && (typeof val === 'string')) {
