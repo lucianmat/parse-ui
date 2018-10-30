@@ -1339,7 +1339,7 @@
             pms = pms.then(function () {
                 return api.Utils.require(['moment', 'bootstrap-datetimepiker'])
                     .then(function (mnt) {
-                        moment = mnt;
+                        moment = mnt[0];
                         self.$(".form-group .input-group.date").datetimepicker({ format: self.options.dateFormat });
                     });
             });
