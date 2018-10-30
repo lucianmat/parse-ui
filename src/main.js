@@ -720,7 +720,7 @@
         }
     }, Events);
 
-    api.CoreManager.etRESTController(api.RestController);
+    api.CoreManager.setRESTController(api.RestController);
 
     api.getRouter = function (root, useHash, hash) {
         if (api._router) {
