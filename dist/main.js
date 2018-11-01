@@ -961,7 +961,7 @@
             }, options || {}) : false;
 
 
-            return api.Cloud.run('createPresignedPost', fp)
+            return api.Cloud.run('createPresignedPost', vpo)
                 .then(function (sgData) {
                     var po,
                         form = new FormData();
