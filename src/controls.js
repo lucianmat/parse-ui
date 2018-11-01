@@ -1632,7 +1632,6 @@
                                         .then(resolve, reject);
                                 },
                                 error: function () {
-                                    alert("Failed");
                                     $pel.find('.progress').hide();
                                     $pel.find('.file-edit').show();
                                     $pel.find('.fileinput-button').show();

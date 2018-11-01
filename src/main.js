@@ -942,6 +942,79 @@
                 });
             });
         },
+        upload: function (finput, options, progress) {
+            var file = finput && finput.files ? finput.files[0] : finput,
+                vpo;
+
+            if (!file) {
+                return Promise.reject('missing file');
+            }
+            if (typeof options === 'function') {
+                progress = options;
+                options = {};
+            }
+
+            vpo = file ? _.defaults({
+                role: 'attachment',
+                name: file.name,
+                contentType: file.type || 'application/octet-stream'
+            }, options || {}) : false;
+
+
+            return api.Cloud.run('createPresignedPost', fp)
+                .then(function (sgData) {
+                    var po,
+                        form = new FormData();
+
+                    api.$.each(sgData.fields, function (fix, fdt) {
+                        form.append(fix, fdt);
+                    });
+                    form.append('file', file);
+
+                    if (sgData.file) {
+                        sgData.file.className = sgData.file.className || 'Files';
+                        po = api.Object.fromJSON(sgData.file);
+                    }
+                    return new Promise(function (resolve, reject) {
+                        api.$.ajax({
+                            url: sgData.url,
+                            type: "POST",
+                            data: form,
+                            processData: false,
+                            contentType: false,
+                            success: function () {
+                                if (!sgData.file) {
+                                    return resolve();
+                                }
+                                if (file.size) {
+                                    po.set('size', file.size);
+                                }
+                                if (file.lastModifiedDate) {
+                                    po.set('lastModified', file.lastModifiedDate);
+                                }
+                                po.set('key', sgData.fields.key);
+                                if (sgData.fields.ACL === 'public-read') {
+                                    po.set('url', sgData.url + '/' + sgData.fields.key);
+                                }
+                                resolve(po);
+                            },
+                            error: reject,
+                            xhr: function () {
+                                myXhr = $.ajaxSettings.xhr();
+                                if (myXhr.upload && progress) {
+                                    myXhr.upload.addEventListener('progress', function (evt) {
+                                        if (evt.lengthComputable) {
+                                            progress(evt.loaded, evt.total, Math.floor((evt.loaded / evt.total) * 100));
+                                        }
+                                    }, false);
+                                }
+                                return myXhr;
+                            }
+                        });
+                    });
+
+                });
+        },
         validateEmail: function (email) {
             var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
             return re.test(email);
