@@ -954,7 +954,7 @@
                 options = {};
             }
 
-            vpo = file ? _.defaults({
+            vpo = file ? _.extend({
                 role: 'attachment',
                 name: file.name,
                 contentType: file.type || 'application/octet-stream'
