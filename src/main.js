@@ -1,11 +1,22 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Parse', 'TraceKit', 'jQuery', 'lodash', 'css', 'require'], factory);
+        define(['Parse', 'TraceKit', 'jQuery', 'lodash', 'css', 'module', 'require'], factory);
     } else {
         var exports = {};
         factory(Box, $);
     }
-}(this, function (api, TraceKit, $, _, rq, require) {
+}(this, function (api, TraceKit, $, _, rq, module, require) {
+    var i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
+        translator;
+
+    function _t(txt) {
+        if (!i18n) {
+            return txt;
+        }
+        translator = translator || require('i18next');
+        return translator.t(txt);
+    }
+
     if (!Number.prototype.format) {
         Number.prototype.format = function (n, x) {
             var re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\.' : '$') + ')';
@@ -292,8 +303,8 @@
                 window.scrollTo(0, 0);
             }
             $.notify({
-                title: "Got an error",
-                message: "Hit an error again :( .<br/> But we log and analyze and resolve asap. <br/>" + (stackInfo.message ? '(<i>' + stackInfo.message + '</i>)' : ''),
+                title: _t('Got an error'),
+                message: _t("Hit an error again :( .<br/> But we log and analyze and resolve asap. <br/>") + (stackInfo.message ? '(<i>' + stackInfo.message + '</i>)' : ''),
                 icon: "fa fa-bug"
             }, {
                     type: 'danger',

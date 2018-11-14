@@ -1,14 +1,24 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['Box', 'module'], factory);
+        define(['Box', 'module', 'require'], factory);
     } else {
         var exports = {};
         factory(Box);
     }
-}(this, function (api, module) {
+}(this, function (api, module, require) {
     var moment,
         $ = api.$,
-        loadCss = typeof module.config().loadCss === 'undefined' ? true : module.config().loadCss;
+        loadCss = typeof module.config().loadCss === 'undefined' ? true : module.config().loadCss,
+        i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
+        translator;
+
+    function _t(txt) {
+        if (!i18n) {
+            return txt;
+        }
+        translator = translator || require('i18next');
+        return translator.t(txt);
+    }
 
     if (typeof CDN_ROOT === 'undefined') {
         CDN_ROOT = '';
@@ -1245,7 +1255,7 @@
                         api.Utils.require('notification')
                             .then(function () {
                                 $.notify({
-                                    message: "Updated !",
+                                    message: _t("Updated") + " !",
                                     icon: "fa fa-info-circle"
                                 }, { type: "info" });
                             });
@@ -1283,7 +1293,7 @@
                 then(function () {
                     $inputs.each(function ($ix, ip) {
                         vd = $(this).data('bm-field');
-                        
+
                         if (vd && vd.split('$')[0] === self.options.className) {
                             self.wireSummernote($(ip));
                             $(ip).summernote('code', $(ip).val());
@@ -1291,7 +1301,7 @@
                     });
                 });
         }
-        
+
         this.$('.input-group-btn .btn').click(function (evt) {
             var $ip = $(evt.currentTarget).parents('.input-group'),
                 $input = $ip.find('input'),
@@ -1714,10 +1724,10 @@
                         BootstrapDialog.confirm({
                             title: 'Atenție',
                             type: BootstrapDialog.TYPE_WARNING,
-                            message: "<i class='fa fa-trash-o text-danger'></i> Remove <i>" + img.name + "</i> ?",
+                            message: "<i class='fa fa-trash-o text-danger'></i> "+ _t("Remove") + " <i>" + img.name + "</i> ?",
                             closable: true,
-                            btnCancelLabel: '<i class="fa fa-ban"></i> Cancel !',
-                            btnOKLabel: '<i class="fa fa-trash-o"></i> Delete!',
+                            btnCancelLabel: '<i class="fa fa-ban"></i> '+ _t("Cancel") +' !',
+                            btnOKLabel: '<i class="fa fa-trash-o"></i> '+ _t("Delete") +'!',
                             btnOKClass: 'btn-danger',
                             callback: function (result) {
                                 if (result) {
@@ -1793,14 +1803,14 @@
                 failed = failed || {
                     field: data.bmField,
                     validate: true,
-                    message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required'
+                    message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' '+ _t('is required')
                 };
 
                 pm = pm.then(function () {
                     return api.Utils.require('notification')
                         .then(function () {
                             $.notify({
-                                message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' is required',
+                                message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' ' +  _t('is required'),
                                 icon: "fa fa-exclamation-circle"
                             }, {
                                     type: "danger",
@@ -2064,13 +2074,12 @@
                                                 myXhr.upload.addEventListener('progress', function (evt) {
                                                     if (evt.lengthComputable) {
                                                         var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
-                                                        $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
+                                                        $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : _t('sending to cloud..'));
                                                         $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
                                                     }
                                                 }, false);
                                             } else {
                                                 $el.parent().find('.summer-progress').hide();
-                                                console.log("Uploadress is not supported.");
                                             }
                                             return myXhr;
                                         }
