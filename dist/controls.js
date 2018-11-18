@@ -777,7 +777,7 @@
                     dtOptions.buttons.push('pageLength');
                 }
                 if (this.options.colvisButton !== false) {
-                    dtOptions.buttons.push({ extend: 'colvis', text: '<i class="fa fa-eye"></i>' });
+                    dtOptions.buttons.push({ extend: 'colvis', columns: ':gt(0)', text: '<i class="fa fa-eye"></i>' });
                 }
                 if (this.options.printButton !== false) {
                     dtOptions.buttons.push({
