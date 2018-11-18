@@ -10,6 +10,7 @@
         $ = api.$,
         loadCss = typeof module.config().loadCss === 'undefined' ? true : module.config().loadCss,
         i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
+        bs4 = typeof module.config().bs4 === 'undefined' ? false : module.config().bs4,
         translator;
 
     function _t(txt) {
@@ -767,7 +768,7 @@
             };
         }
         if (dtOptions.buttons || this.options.defaultButtons) {
-            this._requires.push('datatables.net-buttons-bs');
+            this._requires.push(bs4 ? 'datatables.net-buttons-bs4' : 'datatables.net-buttons-bs');
             this._requires.push('datatables.buttons.colVis');
             this._requires.push('datatables.buttons.print');
             if (this.options.defaultButtons) {
@@ -812,7 +813,9 @@
 
             }
             dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
-
+            if (bs4) {
+                $.fn.dataTableExt.classes.sWrapper =  "dataTables_wrapper  dt-bootstrap4";
+            }
         }
 
         return api.Utils.require(this._requires).then(function () {
