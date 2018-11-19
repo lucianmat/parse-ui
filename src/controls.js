@@ -19,7 +19,7 @@
             return txt;
         }
         translator = translator || require('i18next');
-        return translator.t(txt);
+        return  (translator  && typeof translator.t === 'function') ? translator.t(txt) || txt : txt;
     }
 
     if (typeof CDN_ROOT === 'undefined') {
