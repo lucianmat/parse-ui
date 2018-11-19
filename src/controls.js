@@ -1306,7 +1306,7 @@
                 });
         }
 
-        this.$('.input-group-btn .btn').click(function (evt) {
+        this.$((bs4 ? '.input-group-append' :  '.input-group-btn') + ' .btn').click(function (evt) {
             var $ip = $(evt.currentTarget).parents('.input-group'),
                 $input = $ip.find('input'),
                 vd = $input.data('bm-field');
@@ -1317,7 +1317,7 @@
                 if (loadCss) {
                     rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
                 }
-                $ip.removeClass('input-group').find('button').hide();
+                $ip.removeClass('input-group').find(bs4 ? 'input-group-append' : 'button').hide();
                 api.Utils.require(rqs).then(function () {
                     self.wireSummernote($input);
                     $input.summernote('code', $input.val());
