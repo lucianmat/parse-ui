@@ -1299,6 +1299,7 @@
                         vd = $(this).data('bm-field');
 
                         if (vd && vd.split('$')[0] === self.options.className) {
+                            $(ip).removeClass('input-group').find(bs4 ? '.input-group-append' : 'button').hide();
                             self.wireSummernote($(ip));
                             $(ip).summernote('code', $(ip).val());
                         }
@@ -1317,7 +1318,7 @@
                 if (loadCss) {
                     rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
                 }
-                $ip.removeClass('input-group').find(bs4 ? 'input-group-append' : 'button').hide();
+                $ip.removeClass('input-group').find(bs4 ? '.input-group-append' : 'button').hide();
                 api.Utils.require(rqs).then(function () {
                     self.wireSummernote($input);
                     $input.summernote('code', $input.val());
@@ -1885,7 +1886,7 @@
                 // switch to html
                 if (val.trim().match(/^<[a-z][\s\S]*>/i)) {
                     $input = $(this);
-                    $input.parents('.input-group').removeClass('input-group').find('button').hide();
+                    $input.parents('.input-group').eq(0).removeClass('input-group').find(bs4 ? '.input-group-append' : 'button').hide();
 
                     if (!$(this).data('summernote')) {
                         var rqs = ['summernote'];
