@@ -11,6 +11,7 @@
         loadCss = typeof module.config().loadCss === 'undefined' ? true : module.config().loadCss,
         i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
         bs4 = typeof module.config().bs4 === 'undefined' ? false : module.config().bs4,
+        fa5 = typeof module.config().fa5 === 'undefined' ? false : module.config().fa5,
         translator;
 
     function _t(txt) {
@@ -292,8 +293,8 @@
 
     api.UI.View = View;
     api.UI.View.defaults = $.extend({}, api.UI.Control.defaults, {
-        loadingHtml: '<h1 class="ajax-loading-animation"><i class="fa fa-cog fa-spin"></i> Loading...</h1>',
-        errorHtml: '<h4 class="ajax-loading-error"><i class="fa fa-warning txt-color-orangeDark"></i> Error requesting <span class="txt-color-red">{url}</span>: {status} <span style="text-transform: capitalize;"> {err}</span></h4>',
+        loadingHtml: '<h1 class="ajax-loading-animation"><i class="fa fa-cog fa-spin"></i> '+ _t('Loading')+ '...</h1>',
+        errorHtml: '<h4 class="ajax-loading-error"><i class="fa ' + (fa5 ? 'fa-exclamation-triangle' : ' fa-warning ')+ (bs4 ?'text-warning' : 'txt-color-orangeDark')+ '"></i> '+ _t('Error requesting') +' <span class="'+ (bs4 ? 'text-danger' : 'txt-color-red')+'">{url}</span>: {status} <span style="text-transform: capitalize;"> {err}</span></h4>',
         selectContainer: 'box-content-container',
         messagesContainer: 'box-messages-container',
         childControls: '[data-controller]'
@@ -423,7 +424,7 @@
                             width: o.relation ? '100%' : o.width,
                             minimumInputLength: self.options.minimumInputLength || 3,
                             allowClear: self.options.bmRequired ? false : true,
-                            placeholder: self.options.placeholder || "Select " + self.options.className,
+                            placeholder: self.options.placeholder || _t('Select') + ' ' + self.options.className,
                             ajax: {
                                 delay: self.options.delay || 250,
                                 transport: self.options.transport || function (params, success, failure) {
@@ -921,12 +922,12 @@
             };
         } else if (iv.type === 'Boolean') {
             vc.render = function (data) {
-                return data ? '<i class="fa fa-check-square-o"></i>' : '<i class="fa fa-square-o"></i>';
+                return data ? '<i class="fa ' +( fa5? 'fa-check-square' : 'fa-check-square-o') + '"></i>' : '<i class="fa '+ (fa5? 'fa-square' : 'fa-square-o') + '"></i>';
             };
         } else if (iv.type === 'File') {
             vc.render = function (data) {
                 data = data && data.toJSON ? data.toJSON() : data;
-                return data ? '<a href="' + data.url + '" target="_blank"><i class="fa fa-external-link"></i> ' + (data.name ? data.name.substr(data.name.indexOf('_') + 1) : '') + '</a>' : '';
+                return data ? '<a href="' + data.url + '" target="_blank"><i class="fa '+ ( fa5 ? 'fa-external-link-alt' : 'fa-external-link') + '"></i> ' + (data.name ? data.name.substr(data.name.indexOf('_') + 1) : '') + '</a>' : '';
             };
         } else if (iv.type === 'Array') {
             vc.render = function (data) {
@@ -1069,10 +1070,10 @@
     api.UI.DataTable = DataTable;
     api.UI.DataTable.defaults = $.extend({}, api.UI.Control.defaults, {
         defaultButtons: true,
-        classButtons: 'btn btn-xs',
+        classButtons: bs4 ? 'btn btn-sm' :'btn btn-xs' ,
         classButtonEdit: 'btn-success',
         classButtonView: 'btn-default',
-        iconButtonEdit: '<i class="fa fa-pencil-square-o"></i>',
+        iconButtonEdit: fa5 ? '<i class="fa fa-edit"></i>' : '<i class="fa fa-pencil-square-o"></i>',
         iconButtonView: '<i class="fa fa-search"></i>'
     });
 
@@ -1727,10 +1728,10 @@
                         BootstrapDialog.confirm({
                             title: 'Atenție',
                             type: BootstrapDialog.TYPE_WARNING,
-                            message: "<i class='fa fa-trash-o text-danger'></i> "+ _t("Remove") + " <i>" + img.name + "</i> ?",
+                            message: "<i class='fa "+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +" text-danger'></i> "+ _t("Remove") + " <i>" + img.name + "</i> ?",
                             closable: true,
                             btnCancelLabel: '<i class="fa fa-ban"></i> '+ _t("Cancel") +' !',
-                            btnOKLabel: '<i class="fa fa-trash-o"></i> '+ _t("Delete") +'!',
+                            btnOKLabel: '<i class="fa '+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +'"></i> '+ _t("Delete") +'!',
                             btnOKClass: 'btn-danger',
                             callback: function (result) {
                                 if (result) {
@@ -2238,9 +2239,9 @@
         cancelButtonClass: 'footer .btn-default',
         createButtonClass: 'footer .btn-success',
         removeButtonClass: 'footer .btn-danger',
-        createButtonText: '<i class="fa fa-plus"></i> Create',
-        updateButtonText: '<i class="fa fa-floppy-o"></i> Update',
-        imageFormat: '<li data-object-id="{id}"><div class="well well-sm"><span>{display}</span><br><strong>{name}</strong><br>{size}<br><a href="{url}" target="_blank"><i class="fa fa-download"></i> Download</a>  | <a href="#" data-file-id="{id}" class="text-danger"><i class="fa fa-times"></i> Remove</a></div></li>',
+        createButtonText: '<i class="fa fa-plus"></i> ' + _t('Create'),
+        updateButtonText: '<i class="fa '+ (fa5 ? 'fa-save' : 'fa-floppy-o')+ '"></i> ' + _t('Update'),
+        imageFormat: '<li data-object-id="{id}"><div class="well well-sm"><span>{display}</span><br><strong>{name}</strong><br>{size}<br><a href="{url}" target="_blank"><i class="fa fa-download"></i> '+_t('Download') +'</a>  | <a href="#" data-file-id="{id}" class="text-danger"><i class="fa fa-times"></i> '+ _t('Remove') + '</a></div></li>',
         progressBar: '<div class="summer-progress" style="display:none"><div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;"><span>0%</span></div></div>',
         bindFilter: '[data-bm-field]',
         dateFormat: 'DD-MM-YYYY',
