@@ -1646,11 +1646,11 @@
                                         })
                                         .then(resolve, reject);
                                 },
-                                error: function () {
+                                error: function (err) {
                                     $pel.find('.progress').hide();
                                     $pel.find('.file-edit').show();
                                     $pel.find('.fileinput-button').show();
-                                    reject();
+                                    reject( (err.textContent|| 'error') + ' uploading to cloud ' + file.name);
                                 },
                                 xhr: function () {
                                     myXhr = $.ajaxSettings.xhr();
@@ -1669,12 +1669,11 @@
                                     return myXhr;
                                 }
                             });
-                        }, function () {
+                        }, function (err) {
                             $pel.find('.progress').hide();
                             $pel.find('.file-edit').show();
                             $pel.find('.fileinput-button').show();
-
-                            reject(message);
+                            reject(err);
                         });
                 });
             }))
@@ -1715,7 +1714,7 @@
             vm.empty();
             vm.append(self.options.imageFormat.format({
                 display: img.contentType && img.contentType.indexOf('image/') === 0 ? '<img src="' + url + '">' : '<i class="fa fa-file"></i>',
-                name: img.name,
+                name: img.name || img.fileName,
                 id: img.objectId,
                 url: url,
                 size: img.size.toByteSize()
@@ -1727,12 +1726,12 @@
                 api.Utils.require('bootstrap-dialog')
                     .then(function (BootstrapDialog) {
                         BootstrapDialog.confirm({
-                            title: 'Atenție',
+                            title: _t('Warning'),
                             type: BootstrapDialog.TYPE_WARNING,
-                            message: "<i class='fa "+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +" text-danger'></i> "+ _t("Remove") + " <i>" + img.name + "</i> ?",
+                            message: "<i class='fa "+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +" text-danger'></i> "+ _t("Remove file") + " <i>" + (img.name || img.fileName) + "</i> ?",
                             closable: true,
-                            btnCancelLabel: '<i class="fa fa-ban"></i> '+ _t("Cancel") +' !',
-                            btnOKLabel: '<i class="fa '+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +'"></i> '+ _t("Delete") +'!',
+                            btnCancelLabel: '<i class="fa fa-ban"></i> '+ _t("Cancel"),
+                            btnOKLabel: '<i class="fa '+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +'"></i> '+ _t("Delete"),
                             btnOKClass: 'btn-danger',
                             callback: function (result) {
                                 if (result) {
@@ -1748,7 +1747,6 @@
                                         img.set('purged', true);
                                     }
                                     return api.Object.saveAll([img, self.model])
-
                                         .then(function () {
                                             self.renderImage(null, $container);
                                         });
@@ -1757,8 +1755,6 @@
                         });
                     });
             });
-
-
         } else {
             $container.parents('.file-placeholder').find('.file-list').remove();
         }
@@ -2069,9 +2065,9 @@
                                                 })
                                                 .then(resolve, reject);
                                         },
-                                        error: function () {
+                                        error: function (err) {
                                             $el.parent().find('.summer-progress').hide();
-                                            reject();
+                                            reject( (err.textContent|| 'error') + ' uploading to cloud ' + file.name);
                                         },
                                         xhr: function () {
                                             myXhr = $.ajaxSettings.xhr();
@@ -2093,6 +2089,7 @@
 
                             }, function (err) {
                                 $el.parent().find('.summer-progress').hide();
+                                Box.Trace.reportError(err);
                                 //  reject(err.message || err);
                             });
                     });
