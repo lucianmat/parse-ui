@@ -1247,8 +1247,12 @@
                         return self.model.save({}, vo);
                     })
                     .then(function () {
-
                         return self._uploadFiles();
+                    })
+                    .then(function () {
+                        return Promise.all($.each(self.childrens || [], function (rms) {
+                            return  typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
+                        }));
                     })
                     .then(function () {
                         if (typeof self.options.onUpdated === 'function') {
@@ -1479,7 +1483,7 @@
 
         return p.then(function () {
             return Promise.all($.map(self.childrens || [], function (cld) {
-                return cld.wire(obj, true);
+                return typeof cld.wire === 'function' ?  cld.wire(obj, true) : Promise.resolve();
             }));
         }).then(function () {
             self.trigger('wired');
@@ -2211,7 +2215,7 @@
 
         return pm.then(function () {
             return Promise.all($.each(self.childrens || [], function (rms) {
-                return rms.update();
+                return  typeof rms.update === 'function' ? rms.update() : Promise.resolve();
             }));
         });
     };
@@ -2302,6 +2306,11 @@
         this.grid.p || Promise.resolve()])
             .then(function () {
                 return api.UI.Control.prototype.initialize.call(self);
+            })
+            .then(function () {
+                self.editor.on('wired',function () {
+                    self.trigger('wired', self);
+                });
             });
     };
 
@@ -2316,9 +2325,8 @@
 
     DataSet.prototype.wire = function (cmObj) {
         this.grid.hide();
-        this.editor.$el.removeClass('hidden').show();
         this.editor.wire(cmObj);
-        this.trigger('wired');
+        this.editor.$el.removeClass('hidden').show();
     };
 
     DataSet.prototype.showGrid = function (reload) {
