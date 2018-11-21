@@ -81,22 +81,22 @@
         }
         var years = Math.floor(temp / 31536000);
         if (years) {
-            return years + ' year' + numberEnding(years);
+            return years + ' ' + _t('year') + numberEnding(years);
         }
         var days = Math.floor((temp %= 31536000) / 86400);
         if (days) {
-            return days + ' day' + numberEnding(days);
+            return days + ' ' + _t('day') + numberEnding(days);
         }
         var hours = Math.floor((temp %= 86400) / 3600);
         if (hours) {
-            return hours + ' hour' + numberEnding(hours);
+            return hours + ' ' + _t('day') + numberEnding(hours);
         }
         var minutes = Math.floor((temp %= 3600) / 60);
         if (minutes) {
-            return minutes + ' minute' + numberEnding(minutes);
+            return minutes + ' ' + _t('minute') + numberEnding(minutes);
         }
         var seconds = temp % 60;
-        return seconds + ' second' + numberEnding(seconds);
+        return seconds + ' ' + _t('second') + numberEnding(seconds);
     };
 
     if (typeof String.prototype.format !== 'function') {
@@ -811,30 +811,6 @@
     };
     api.Utils = {
         ismobile: (/iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase())),
-        isFunction: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Function]';
-        },
-        isArray: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Array]';
-        },
-        isObject: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Object]';
-        },
-        isDate: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Date]';
-        },
-        isBoolean: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Boolean]';
-        },
-        isNumber: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object Number]';
-        },
-        isString: function (obj) {
-            return Object.prototype.toString.apply(obj) === '[object String]';
-        },
-        isValue: function (obj) {
-            return !api.Utils.isObject(obj) && !api.Utilsthis.isArray(obj) && !api.Utils.isFunction(obj);
-        },
         diff: {
             VALUE_CREATED: 'created',
             VALUE_UPDATED: 'updated',
