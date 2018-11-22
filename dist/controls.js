@@ -12,6 +12,7 @@
         i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
         bs4 = typeof module.config().bs4 === 'undefined' ? false : module.config().bs4,
         fa5 = typeof module.config().fa5 === 'undefined' ? false : module.config().fa5,
+        lazyEdit = typeof module.config().lazyEdit === 'undefined' ? false : module.config().lazyEdit,
         translator;
 
     function _t(txt) {
@@ -19,7 +20,7 @@
             return txt;
         }
         translator = translator || require('i18next');
-        return  (translator  && typeof translator.t === 'function') ? translator.t(txt) || txt : txt;
+        return (translator && typeof translator.t === 'function') ? translator.t(txt) || txt : txt;
     }
 
     if (typeof CDN_ROOT === 'undefined') {
@@ -293,8 +294,8 @@
 
     api.UI.View = View;
     api.UI.View.defaults = $.extend({}, api.UI.Control.defaults, {
-        loadingHtml: '<h1 class="ajax-loading-animation"><i class="fa fa-cog fa-spin"></i> '+ _t('Loading')+ '...</h1>',
-        errorHtml: '<h4 class="ajax-loading-error"><i class="fa ' + (fa5 ? 'fa-exclamation-triangle' : ' fa-warning ')+ (bs4 ?'text-warning' : 'txt-color-orangeDark')+ '"></i> '+ _t('Error requesting') +' <span class="'+ (bs4 ? 'text-danger' : 'txt-color-red')+'">{url}</span>: {status} <span style="text-transform: capitalize;"> {err}</span></h4>',
+        loadingHtml: '<h1 class="ajax-loading-animation"><i class="fa fa-cog fa-spin"></i> ' + _t('Loading') + '...</h1>',
+        errorHtml: '<h4 class="ajax-loading-error"><i class="fa ' + (fa5 ? 'fa-exclamation-triangle' : ' fa-warning ') + (bs4 ? 'text-warning' : 'txt-color-orangeDark') + '"></i> ' + _t('Error requesting') + ' <span class="' + (bs4 ? 'text-danger' : 'txt-color-red') + '">{url}</span>: {status} <span style="text-transform: capitalize;"> {err}</span></h4>',
         selectContainer: 'box-content-container',
         messagesContainer: 'box-messages-container',
         childControls: '[data-controller]'
@@ -815,7 +816,7 @@
             }
             dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
             if (bs4) {
-                $.fn.dataTableExt.classes.sWrapper =  "dataTables_wrapper  dt-bootstrap4";
+                $.fn.dataTableExt.classes.sWrapper = "dataTables_wrapper  dt-bootstrap4";
             }
         }
 
@@ -922,12 +923,12 @@
             };
         } else if (iv.type === 'Boolean') {
             vc.render = function (data) {
-                return data ? '<i class="fa ' +( fa5? 'fa-check-square' : 'fa-check-square-o') + '"></i>' : '<i class="fa '+ (fa5? 'fa-square' : 'fa-square-o') + '"></i>';
+                return data ? '<i class="fa ' + (fa5 ? 'fa-check-square' : 'fa-check-square-o') + '"></i>' : '<i class="fa ' + (fa5 ? 'fa-square' : 'fa-square-o') + '"></i>';
             };
         } else if (iv.type === 'File') {
             vc.render = function (data) {
                 data = data && data.toJSON ? data.toJSON() : data;
-                return data ? '<a href="' + data.url + '" target="_blank"><i class="fa '+ ( fa5 ? 'fa-external-link-alt' : 'fa-external-link') + '"></i> ' + (data.name ? data.name.substr(data.name.indexOf('_') + 1) : '') + '</a>' : '';
+                return data ? '<a href="' + data.url + '" target="_blank"><i class="fa ' + (fa5 ? 'fa-external-link-alt' : 'fa-external-link') + '"></i> ' + (data.name ? data.name.substr(data.name.indexOf('_') + 1) : '') + '</a>' : '';
             };
         } else if (iv.type === 'Array') {
             vc.render = function (data) {
@@ -1070,7 +1071,7 @@
     api.UI.DataTable = DataTable;
     api.UI.DataTable.defaults = $.extend({}, api.UI.Control.defaults, {
         defaultButtons: true,
-        classButtons: bs4 ? 'btn btn-sm' :'btn btn-xs' ,
+        classButtons: bs4 ? 'btn btn-sm' : 'btn btn-xs',
         classButtonEdit: 'btn-success',
         classButtonView: 'btn-default',
         iconButtonEdit: fa5 ? '<i class="fa fa-edit"></i>' : '<i class="fa fa-pencil-square-o"></i>',
@@ -1251,7 +1252,7 @@
                     })
                     .then(function () {
                         return Promise.all($.each(self.childrens || [], function (rms) {
-                            return  typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
+                            return typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
                         }));
                     })
                     .then(function () {
@@ -1311,7 +1312,7 @@
                 });
         }
 
-        this.$((bs4 ? '.input-group-append' :  '.input-group-btn') + ' .btn').click(function (evt) {
+        this.$((bs4 ? '.input-group-append' : '.input-group-btn') + ' .btn').click(function (evt) {
             var $ip = $(evt.currentTarget).parents('.input-group'),
                 $input = $ip.find('input'),
                 vd = $input.data('bm-field');
@@ -1483,7 +1484,7 @@
 
         return p.then(function () {
             return Promise.all($.map(self.childrens || [], function (cld) {
-                return typeof cld.wire === 'function' ?  cld.wire(obj, true) : Promise.resolve();
+                return typeof cld.wire === 'function' ? cld.wire(obj, true) : Promise.resolve();
             }));
         }).then(function () {
             self.trigger('wired');
@@ -1654,7 +1655,7 @@
                                     $pel.find('.progress').hide();
                                     $pel.find('.file-edit').show();
                                     $pel.find('.fileinput-button').show();
-                                    reject( (err.textContent|| 'error') + ' uploading to cloud ' + file.name);
+                                    reject((err.textContent || 'error') + ' uploading to cloud ' + file.name);
                                 },
                                 xhr: function () {
                                     myXhr = $.ajaxSettings.xhr();
@@ -1732,10 +1733,10 @@
                         BootstrapDialog.confirm({
                             title: _t('Warning'),
                             type: BootstrapDialog.TYPE_WARNING,
-                            message: "<i class='fa "+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +" text-danger'></i> "+ _t("Remove file") + " <i>" + (img.name || img.fileName) + "</i> ?",
+                            message: "<i class='fa " + (fa5 ? "fa-trash-alt" : "fa-trash-o") + " text-danger'></i> " + _t("Remove file") + " <i>" + (img.name || img.fileName) + "</i> ?",
                             closable: true,
-                            btnCancelLabel: '<i class="fa fa-ban"></i> '+ _t("Cancel"),
-                            btnOKLabel: '<i class="fa '+ (fa5 ? "fa-trash-alt" :  "fa-trash-o") +'"></i> '+ _t("Delete"),
+                            btnCancelLabel: '<i class="fa fa-ban"></i> ' + _t("Cancel"),
+                            btnOKLabel: '<i class="fa ' + (fa5 ? "fa-trash-alt" : "fa-trash-o") + '"></i> ' + _t("Delete"),
                             btnOKClass: 'btn-danger',
                             callback: function (result) {
                                 if (result) {
@@ -1808,14 +1809,14 @@
                 failed = failed || {
                     field: data.bmField,
                     validate: true,
-                    message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' '+ _t('is required')
+                    message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' ' + _t('is required')
                 };
 
                 pm = pm.then(function () {
                     return api.Utils.require('notification')
                         .then(function () {
                             $.notify({
-                                message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' ' +  _t('is required'),
+                                message: data.bmRequiredError || data.bmField.split('$').join(' ') + ' ' + _t('is required'),
                                 icon: "fa fa-exclamation-circle"
                             }, {
                                     type: "danger",
@@ -2071,7 +2072,7 @@
                                         },
                                         error: function (err) {
                                             $el.parent().find('.summer-progress').hide();
-                                            reject( (err.textContent|| 'error') + ' uploading to cloud ' + file.name);
+                                            reject((err.textContent || 'error') + ' uploading to cloud ' + file.name);
                                         },
                                         xhr: function () {
                                             myXhr = $.ajaxSettings.xhr();
@@ -2215,7 +2216,7 @@
 
         return pm.then(function () {
             return Promise.all($.each(self.childrens || [], function (rms) {
-                return  typeof rms.update === 'function' ? rms.update() : Promise.resolve();
+                return typeof rms.update === 'function' ? rms.update() : Promise.resolve();
             }));
         });
     };
@@ -2242,8 +2243,8 @@
         createButtonClass: 'footer .btn-success',
         removeButtonClass: 'footer .btn-danger',
         createButtonText: '<i class="fa fa-plus"></i> ' + _t('Create'),
-        updateButtonText: '<i class="fa '+ (fa5 ? 'fa-save' : 'fa-floppy-o')+ '"></i> ' + _t('Update'),
-        imageFormat: '<li data-object-id="{id}"><div class="well well-sm"><span>{display}</span><br><strong>{name}</strong><br>{size}<br><a href="{url}" target="_blank"><i class="fa fa-download"></i> '+_t('Download') +'</a>  | <a href="#" data-file-id="{id}" class="text-danger"><i class="fa fa-times"></i> '+ _t('Remove') + '</a></div></li>',
+        updateButtonText: '<i class="fa ' + (fa5 ? 'fa-save' : 'fa-floppy-o') + '"></i> ' + _t('Update'),
+        imageFormat: '<li data-object-id="{id}"><div class="well well-sm"><span>{display}</span><br><strong>{name}</strong><br>{size}<br><a href="{url}" target="_blank"><i class="fa fa-download"></i> ' + _t('Download') + '</a>  | <a href="#" data-file-id="{id}" class="text-danger"><i class="fa fa-times"></i> ' + _t('Remove') + '</a></div></li>',
         progressBar: '<div class="summer-progress" style="display:none"><div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em;"><span>0%</span></div></div>',
         bindFilter: '[data-bm-field]',
         dateFormat: 'DD-MM-YYYY',
@@ -2270,8 +2271,40 @@
     DataSet.prototype = Object.create(Control.prototype);
     DataSet.prototype.constructor = DataSet;
 
+    DataSet.prototype._getEditor = function (opts) {
+        var self = this;
+
+        if (this.editor) {
+            return Promise.resolve(this.editor);
+        }
+        if (this._editorLoader) {
+            return this._editorLoader;
+        }
+
+        this._editorLoader = typeof self.options.editor === 'function' ?
+            self.options.editor(opts)
+                .then(function (editor) {
+                    self.editor = editor;
+                    self.editor.on('wired', function () {
+                        self.trigger('wired', self);
+                    });
+                    return self.editor;
+                }) :
+            new Promise(function (resolve, reject) {
+                self.editor = self.options.editor || new Editor(this.$(this.options.editorId ? this.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
+
+                self.editor.on('wired', function () {
+                    self.trigger('wired', self);
+                });
+
+                return self.editor.p.then(resolve, reject);
+            });
+
+        return this._editorLoader;
+    };
     DataSet.prototype.initialize = function () {
         var self = this,
+            pme,
             bid = this.$el.prop('id'),
             vop = {
                 onAction: this.onAction.bind(this),
@@ -2296,21 +2329,16 @@
 
         this.grid = this.options.grid || new DataTable(this.$(this.options.gridId ? this.options.gridId :
             (bid ? '#' + bid + '-table' : 'table.box-table')), opts);
+        
+        this._editorOptions = opts;
+        pme = (lazyEdit ? Promise.resolve() : this._getEditor(opts));
 
-        this.editor = this.options.editor ||
-            new Editor(this.$(this.options.editorId ? this.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
+        // api._.defaults(this.editor.options, vop);
 
-        api._.defaults(this.editor.options, vop);
-
-        return Promise.all([this.editor.p || Promise.resolve(),
-        this.grid.p || Promise.resolve()])
+        return Promise.all([pme,
+            this.grid.p || Promise.resolve()])
             .then(function () {
                 return api.UI.Control.prototype.initialize.call(self);
-            })
-            .then(function () {
-                self.editor.on('wired',function () {
-                    self.trigger('wired', self);
-                });
             });
     };
 
@@ -2324,9 +2352,14 @@
     };
 
     DataSet.prototype.wire = function (cmObj) {
-        this.grid.hide();
-        this.editor.wire(cmObj);
-        this.editor.$el.removeClass('hidden').show();
+        var self = this;
+        
+        this._getEditor(this._editorOptions)
+            .then(function () {
+                self.grid.hide();
+                self.editor.wire(cmObj);
+                self.editor.$el.removeClass('hidden').show();
+            });
     };
 
     DataSet.prototype.showGrid = function (reload) {
