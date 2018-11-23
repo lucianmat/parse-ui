@@ -2291,7 +2291,9 @@
                     return self.editor;
                 }) :
             new Promise(function (resolve, reject) {
-                self.editor = self.options.editor || new Editor(this.$(this.options.editorId ? this.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
+                var  bid = self.$el.prop('id');
+                
+                self.editor = self.options.editor || new Editor(this.$(self.options.editorId ? self.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
 
                 self.editor.on('wired', function () {
                     self.trigger('wired', self);
@@ -2353,7 +2355,7 @@
 
     DataSet.prototype.wire = function (cmObj) {
         var self = this;
-        
+
         this._getEditor(this._editorOptions)
             .then(function () {
                 self.grid.hide();
