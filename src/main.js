@@ -534,7 +534,7 @@
         var i = 0, names;
 
         // Delete all event listeners and "drop" events.
-        if (!name && !context && !callback) {
+        if (!name && !context && !callback && listeners) {
             for (names = Object.keys(listeners); i < names.length; i++) {
                 listeners[names[i]].cleanup();
             }

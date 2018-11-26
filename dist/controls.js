@@ -2301,6 +2301,19 @@
             return this._editorLoader;
         }
 
+        if (opts.events) {
+            if (typeof opts.events.initialized === 'function') {
+                opts.events.initialized = function () {
+                    self.trigger('initialized', self);
+                };
+            }
+            if (typeof opts.events.wired === 'function') {
+                opts.events.wired = function () {
+                    self.trigger('wired', self);
+                };
+            }
+        }
+
         this._editorLoader = typeof self.options.editor === 'function' ?
             self.options.editor(opts)
                 .then(function (editor) {
@@ -2314,10 +2327,6 @@
                 var bid = self.$el.prop('id');
 
                 self.editor = self.options.editor || new Editor(this.$(self.options.editorId ? self.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
-
-                self.editor.on('wired', function () {
-                    self.trigger('wired', self);
-                });
 
                 return self.editor.p.then(resolve, reject);
             });
@@ -2353,7 +2362,7 @@
             (bid ? '#' + bid + '-table' : 'table.box-table')), opts);
 
         this._editorOptions = opts;
-        pme = (lazyEdit ? Promise.resolve() : this._getEditor(opts));
+        pme = (lazyEdit ? Promise.resolve() : this._getEditor(this._editorOptions));
 
         // api._.defaults(this.editor.options, vop);
 
