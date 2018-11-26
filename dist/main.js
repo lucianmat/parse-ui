@@ -986,7 +986,23 @@
                                 if (sgData.fields.ACL === 'public-read') {
                                     po.set('url', sgData.url + '/' + sgData.fields.key);
                                 }
-                                resolve(po);
+                                if ((file.type|| '').indexOf('image/') !== 0) {
+                                    return po.save().then(resolve,reject);
+                                }
+                                var img = new Image();
+                                img.onload = function () {
+                                    if (this.naturalWidth|| this.width) {
+                                        po.set('width', this.naturalWidth|| this.width);
+                                    }
+                                    if (this.naturalHeight|| this.height) {
+                                        po.set('height', this.naturalHeight|| this.height);
+                                    }
+                                    po.save().then(resolve,reject);
+                                };
+                                img.onerror = function () {
+                                    po.save().then(resolve,reject);
+                                };
+                                img.src =  (sgData.fields.ACL === 'public-read') ? sgData.url + '/' + sgData.fields.key : api.serverURL + '/storage/' + api.appId + '/' + po.id;
                             },
                             error: reject,
                             xhr: function () {
