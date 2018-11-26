@@ -39,7 +39,8 @@
             this.$el.data(),
             options || {});
 
-        this.p = this.p || Promise.resolve();
+        this.p = this.p || this.options.p || Promise.resolve();
+
         this.p.then(function () {
             var old;
             if (!self.options.domLink) {
@@ -329,153 +330,162 @@
     Select.prototype.initialize = function () {
         var self = this;
 
-        return api.UI.Control.prototype.initialize.call(this)
-            .then(function () {
-                return new Promise(function (resolve, reject) {
-                    var rz = Promise.resolve(),
-                        o = self.options;
+        api.UI.Control.prototype.initialize.call(this);
+        this.p = this.p.then(function () {
+            return new Promise(function (resolve, reject) {
+                var rz = Promise.resolve(),
+                    o = self.options;
 
-                    if (self.query) {
-                        return resolve();
-                    }
-                    this.__initial = [];
+                if (self.query) {
+                    return resolve();
+                }
+                this.__initial = [];
 
-                    self.query = o.query || new api.Query(o.className);
+                self.query = o.query || new api.Query(o.className);
 
-                    if (o.display && (o.display.indexOf('.') !== -1)) {
-                        o.display.split(';').forEach(function (uu) {
-                            var vd = uu.split('.');
-                            if (vd.length > 1) {
-                                self.query.include(vd[0]);
-                            }
-                        });
-                    }
-                    if (o.order) {
-                        self.query._order = o.order.split(",");
-                    }
-
-                    if (o.include) {
-                        self.query.include(o.include);
-                    }
-
-                    if (!$.fn.select2) {
-                        rz = api.Utils.require(['select2']);
-                    }
-                    return rz.then(function () {
-                        var vq = {};
-
-                        if (typeof o.useMasterKey !== 'undefined') {
-                            vq.useMasterKey = o.useMasterKey;
+                if (o.display && (o.display.indexOf('.') !== -1)) {
+                    o.display.split(';').forEach(function (uu) {
+                        var vd = uu.split('.');
+                        if (vd.length > 1) {
+                            self.query.include(vd[0]);
                         }
+                    });
+                }
+                if (o.order) {
+                    self.query._order = o.order.split(",");
+                }
 
-                        if (o.preload) {
-                            return self.query.find(vq)
-                                .then(function (ri) {
-                                    var rht = $.map(ri, function (ritm) {
-                                        return '<option value="' + encodeURI(ritm.id) + '">' +
-                                            (self.options.display || self.options.searchFor).split(',').map(function (fi) {
-                                                return ritm.get(fi) || '';
-                                            }).join(', ') + '</option>';
-                                    }).join('');
-                                    self.$el.html(rht);
-                                    self.$el.select2($.extend({
-                                        width: o.relation ? '100%' : o.width,
-                                        allowClear: self.options.bmRequired ? false : true,
-                                        placeholder: self.options.placeholder || "Select " + self.options.className
-                                    }, o));
+                if (o.include) {
+                    self.query.include(o.include);
+                }
 
-                                    self.$el.on('select2:select', function () {
-                                        self.$el.data('select2').trigger('selection:update', {
-                                            data: $(this).val() ? $(this).select2('data') : []
-                                        });
-                                    });
-                                    if (!self.options.bmRequired) {
-                                        self.$el.on('select2:unselect', function (evt) {
-                                            self.$el.data('select2').trigger('selection:update', {
-                                                data: []
-                                            });
-                                        });
-                                    }
-                                });
-                        }
+                if (!$.fn.select2) {
+                    rz = api.Utils.require(['select2']);
+                }
+                return rz.then(function () {
+                    var vq = {};
 
-                        if (o.withData) {
-                            self.$el.select2($.extend({
-                                width: o.relation ? '100%' : o.width,
-                                allowClear: self.options.bmRequired ? false : true,
-                                placeholder: self.options.placeholder || "Select " + self.options.className
-                            }, o));
+                    if (typeof o.useMasterKey !== 'undefined') {
+                        vq.useMasterKey = o.useMasterKey;
+                    }
 
-                            self.$el.on('select2:select', function () {
-                                self.$el.data('select2').trigger('selection:update', {
-                                    data: $(this).val() ? $(this).select2('data') : []
-                                });
-                            });
-                            if (!self.options.bmRequired) {
-                                self.$el.on('select2:unselect', function (evt) {
+                    if (o.preload) {
+                        return self.query.find(vq)
+                            .then(function (ri) {
+                                var rht = $.map(ri, function (ritm) {
+                                    return '<option value="' + encodeURI(ritm.id) + '">' +
+                                        (self.options.display || self.options.searchFor).split(',').map(function (fi) {
+                                            return ritm.get(fi) || '';
+                                        }).join(', ') + '</option>';
+                                }).join('');
+                                self.$el.html(rht);
+                                self.$el.select2($.extend({
+                                    width: o.relation ? '100%' : o.width,
+                                    allowClear: self.options.bmRequired ? false : true,
+                                    placeholder: self.options.placeholder || "Select " + self.options.className
+                                }, o));
+
+                                self.$el.on('select2:select', function () {
                                     self.$el.data('select2').trigger('selection:update', {
-                                        data: []
+                                        data: $(this).val() ? $(this).select2('data') : []
                                     });
                                 });
-                            }
-                            return;
-                        }
+                                if (!self.options.bmRequired) {
+                                    self.$el.on('select2:unselect', function (evt) {
+                                        self.$el.data('select2').trigger('selection:update', {
+                                            data: []
+                                        });
+                                    });
+                                }
+                            });
+                    }
 
+                    if (o.withData) {
                         self.$el.select2($.extend({
                             width: o.relation ? '100%' : o.width,
-                            minimumInputLength: self.options.minimumInputLength || 3,
                             allowClear: self.options.bmRequired ? false : true,
-                            placeholder: self.options.placeholder || _t('Select') + ' ' + self.options.className,
-                            ajax: {
-                                delay: self.options.delay || 250,
-                                transport: self.options.transport || function (params, success, failure) {
-
-                                    self.options.searchFor.split(',').forEach(function (fi) {
-                                        self.query.matches(fi, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
-                                    });
-
-                                    self.query.find(vq).then(success, failure);
-                                },
-                                processResults: self.options.processResults || function (data, params) {
-                                    var spl = (self.options.display || self.options.searchFor).split(',');
-
-                                    return {
-                                        results: $.map(data, function (ri) {
-                                            return {
-                                                id: ri.id,
-                                                text: spl.map(function (fi) {
-                                                    var vd = fi.split('.'),
-                                                        lv = fi,
-                                                        ob = ri;
-
-                                                    if (vd.length > 1) {
-                                                        ob = ri.get(vd[0]);
-                                                        lv = vd[1];
-                                                    }
-                                                    return ob.get(lv) || '';
-                                                }).join(', ')
-                                            };
-                                        })
-                                    };
-                                }
-                            }
+                            placeholder: self.options.placeholder || "Select " + self.options.className
                         }, o));
 
+                        self.$el.on('select2:select', function () {
+                            self.$el.data('select2').trigger('selection:update', {
+                                data: $(this).val() ? $(this).select2('data') : []
+                            });
+                        });
                         if (!self.options.bmRequired) {
                             self.$el.on('select2:unselect', function (evt) {
-                                // evt.preventDefault();
-                                self.$el.empty();
+                                self.$el.data('select2').trigger('selection:update', {
+                                    data: []
+                                });
                             });
                         }
-                    }).then(resolve, reject);
-                });
+                        return;
+                    }
+
+                    self.$el.select2($.extend({
+                        width: o.relation ? '100%' : o.width,
+                        minimumInputLength: self.options.minimumInputLength || 3,
+                        allowClear: self.options.bmRequired ? false : true,
+                        placeholder: self.options.placeholder || _t('Select') + ' ' + self.options.className,
+                        ajax: {
+                            delay: self.options.delay || 250,
+                            transport: self.options.transport || function (params, success, failure) {
+
+                                self.options.searchFor.split(',').forEach(function (fi) {
+                                    self.query.matches(fi, new RegExp(params.data.q.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'gi'));
+                                });
+
+                                self.query.find(vq).then(success, failure);
+                            },
+                            processResults: self.options.processResults || function (data, params) {
+                                var spl = (self.options.display || self.options.searchFor).split(',');
+
+                                return {
+                                    results: $.map(data, function (ri) {
+                                        return {
+                                            id: ri.id,
+                                            text: spl.map(function (fi) {
+                                                var vd = fi.split('.'),
+                                                    lv = fi,
+                                                    ob = ri;
+
+                                                if (vd.length > 1) {
+                                                    ob = ri.get(vd[0]);
+                                                    lv = vd[1];
+                                                }
+                                                return ob.get(lv) || '';
+                                            }).join(', ')
+                                        };
+                                    })
+                                };
+                            }
+                        }
+                    }, o));
+
+                    if (!self.options.bmRequired) {
+                        self.$el.on('select2:unselect', function (evt) {
+                            // evt.preventDefault();
+                            self.$el.empty();
+                        });
+                    }
+                }).then(resolve, reject);
             });
+        });
+
+        return this.p;
     };
 
     Select.prototype.val = function (val, oq) {
-        var self = this;
+        var self = this,
+            s2;
         if (this.options.preload || this.options.withData) {
+            s2 = self.$el.data('select2');
             self.$el.val(val).trigger('change');
+            if (s2.selection &&
+                typeof s2.data === 'function' &&
+                typeof s2.selection.update === 'function') {
+                s2.selection.update(s2.data());
+            }
         } else {
             this.p = this.p.then(function () {
                 var so,
@@ -497,9 +507,11 @@
                     .then(function (rz) {
                         self.__initial = rz;
                         self.$el.html($.map(rz, function (ri) {
-                            return self.options.relation ?
-                                '<option value="{id}" selected="selected">{text}</option>'.format({ id: ri.id, text: ri.get(self.options.searchFor) }) :
-                                '<option value="{id}" selected="selected">{text}</option>'.format({ id: ri.id, text: ri.get(self.options.searchFor) });
+                            return '<option value="{id}" selected="selected">{text}</option>'
+                                .format({
+                                    id: ri.id,
+                                    text: ri.get(self.options.searchFor)
+                                });
                         }).join('')).trigger('change');
                         /* if (!self.options.bmRequired) {
                              self.$el.data('select2').$container.find('.select2-selection__clear').click(function() {
@@ -1204,8 +1216,9 @@
 
     Editor.prototype.initialize = function () {
         var self = this,
-            rqs,
-            pms = api.UI.Control.prototype.initialize.call(this);
+            rqs;
+
+        api.UI.Control.prototype.initialize.call(this);
 
         if (!this.options.readOnly && this.options.removeButtonClass) {
             this.$(this.options.removeButtonClass).click(function (evt) {
@@ -1298,18 +1311,21 @@
             if (loadCss) {
                 rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
             }
-            api.Utils.require(rqs).
-                then(function () {
-                    $inputs.each(function ($ix, ip) {
-                        vd = $(this).data('bm-field');
+            this.p = this.p.then(function () {
+                return api.Utils.require(rqs).
+                    then(function () {
+                        $inputs.each(function ($ix, ip) {
+                            vd = $(this).data('bm-field');
 
-                        if (vd && vd.split('$')[0] === self.options.className) {
-                            $(ip).removeClass('input-group').find(bs4 ? '.input-group-append' : 'button').hide();
-                            self.wireSummernote($(ip));
-                            $(ip).summernote('code', $(ip).val());
-                        }
+                            if (vd && vd.split('$')[0] === self.options.className) {
+                                $(ip).removeClass('input-group').find(bs4 ? '.input-group-append' : 'button').hide();
+                                self.wireSummernote($(ip));
+                                $(ip).summernote('code', $(ip).val());
+                            }
+                        });
                     });
-                });
+            });
+
         }
 
         this.$((bs4 ? '.input-group-append' : '.input-group-btn') + ' .btn').click(function (evt) {
@@ -1331,8 +1347,6 @@
             }
         });
 
-
-
         this.$('select[data-field-target]').each(function () {
             var vd = $(this).data('bm-field'),
                 oq = {};
@@ -1348,6 +1362,13 @@
                 self.selects[vd] = new api.UI.Select(this, oq);
             }
         });
+        if (!api._.isEmpty(self.selects)) {
+            this.p = this.p.then(function () {
+                return Promise.all(Object.keys(self.selects).map(function (fi) {
+                    return self.selects[fi].p;
+                }));
+            });
+        }
 
         this.$("input[data-field-type=\"Number\"]").each(function (ix, el) {
             var vd = $(this).data('bm-field');
@@ -1356,7 +1377,7 @@
             }
         });
         if (this.$("[data-field-type=\"Date\"]").length) {
-            pms = pms.then(function () {
+            this.p = this.p.then(function () {
                 return api.Utils.require(['moment', 'bootstrap-datetimepiker'])
                     .then(function (mnt) {
                         moment = mnt[0];
@@ -1364,7 +1385,7 @@
                     });
             });
         }
-        pms = pms.then(function () {
+        this.p = this.p.then(function () {
             if (!self.$('.editor-lock .users-open-close').length || !api.Socket.hasClient()) {
                 return Promise.resolve();
             }
@@ -1381,18 +1402,16 @@
                     });
                 });
         });
-        return pms;
+        return this.p;
     };
 
 
     Editor.prototype.wire = function (obj, asParent) {
         var self = this,
-            p = Promise.resolve(),
-
             filter = this.options.bindFilter || '[data-bm-field]';
 
         if (obj && obj.className && obj.className !== this.options.className) {
-            return p;
+            return this.p;
         }
 
         this.model = obj;
@@ -1424,12 +1443,12 @@
 
         this.$(filter).each(function () {
             var thisEl = this;
-            p = p.then(function () {
+            self.p = self.p.then(function () {
                 return _wireElement.call(thisEl, self, obj);
             });
         });
 
-        p = p.then(function () {
+        this.p = this.p.then(function () {
             var ids = [],
                 pms = Promise.resolve();
 
@@ -1482,7 +1501,7 @@
             return pms;
         });
 
-        return p.then(function () {
+        this.p = this.p.then(function () {
             return Promise.all($.map(self.childrens || [], function (cld) {
                 return typeof cld.wire === 'function' ? cld.wire(obj, true) : Promise.resolve();
             }));
@@ -1493,6 +1512,7 @@
                 self._lockSync();
             }
         });
+        return this.p;
     };
 
     Editor.prototype._lockSync = function () {
@@ -2288,11 +2308,11 @@
                     self.editor.on('wired', function () {
                         self.trigger('wired', self);
                     });
-                    return self.editor;
+                    return self.editor.p;
                 }) :
             new Promise(function (resolve, reject) {
-                var  bid = self.$el.prop('id');
-                
+                var bid = self.$el.prop('id');
+
                 self.editor = self.options.editor || new Editor(this.$(self.options.editorId ? self.options.editorId : (bid ? '#' + bid + '-form' : 'form.box-editor')), opts);
 
                 self.editor.on('wired', function () {
@@ -2331,7 +2351,7 @@
 
         this.grid = this.options.grid || new DataTable(this.$(this.options.gridId ? this.options.gridId :
             (bid ? '#' + bid + '-table' : 'table.box-table')), opts);
-        
+
         this._editorOptions = opts;
         pme = (lazyEdit ? Promise.resolve() : this._getEditor(opts));
 

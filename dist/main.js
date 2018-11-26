@@ -875,12 +875,15 @@
                         return dust;
                     }
                     define.amd.dust = true;
-                    return api.Utils.require('dust-helpers')
+                    return api.Utils.require(['dust-helpers', 'dust.core'])
                         .then(function (dcore) {
-                            var dlnk = dcore || dust;
+                            var dlnk = dcore[0] || dust;
                             if (typeof exports === 'object' && typeof global === 'object') {
                                 global.dust = global.dust || dlnk;
+                            } else if (typeof window === 'object') {
+                                window.dust = window.dust || dlnk;
                             }
+
                             dlnk.onLoad = onLoad || function (name, cb) {
                                 api.Utils.require([name])
                                     .then(function (arz) {
