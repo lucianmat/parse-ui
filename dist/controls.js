@@ -1247,7 +1247,9 @@
 
         if (!this.options.readOnly && this.options.createButtonClass) {
             this.$(this.options.createButtonClass).click(function (evt) {
-                var $this = $(evt.currentTarget);
+                var $this = $(evt.currentTarget),
+                    vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
+
                 evt.preventDefault();
                 if ($(this).hasClass('disabled')) {
                     return;
@@ -1256,12 +1258,16 @@
 
                 self.update()
                     .then(function () {
-                        var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
                         self.trigger('saving');
                         return self.model.save({}, vo);
                     })
                     .then(function () {
-                        return self._uploadFiles();
+                        return self._uploadFiles()
+                            .then(function () {
+                                if (self.model.dirty()) {
+                                    return self.model.save({}, vo);
+                                }
+                            });
                     })
                     .then(function () {
                         return Promise.all($.each(self.childrens || [], function (rms) {
@@ -1608,93 +1614,26 @@
                     if (self.model && self.model.id) {
                         fp.objectId = self.model.id;
                     }
-                    return api.Cloud.run('createPresignedPost', fp)
-                        .then(function (sgData) {
-                            var po,
-                                form = new FormData();
-                            // form.append('Bucket', 'test-box-devel');
-                            api.$.each(sgData.fields, function (fix, fdt) {
-                                form.append(fix, fdt);
-                            });
-                            form.append('file', file);
 
-                            if (sgData.file) {
-                                sgData.file.className = sgData.file.className || 'Files';
-                                po = api.Object.fromJSON(sgData.file);
+                    return api.Utils.upload(file, fp, function (loaded, total, percentComplete) {
+                        $pel.find('.progress span').html(percentComplete + '%');
+                        $pel.find('.progress .progress-bar').css({ width: percentComplete + '%' });
+                    })
+                        .then(function (po) {
+                            if (self.model) {
+                                self.model.set(img.role, po);
                             }
-
-                            api.$.ajax({
-                                url: sgData.url,
-                                type: "POST",
-                                data: form,
-                                processData: false, //Work around #1
-                                contentType: false, //Work around #2
-                                success: function (rzi) {
-                                    return Promise.resolve()
-                                        .then(function () {
-                                            var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
-                                                so = [];
-
-                                            if (!sgData.file) {
-                                                return;
-                                            }
-                                            if (file.size) {
-                                                po.set('size', file.size);
-                                            }
-                                            if (file.lastModifiedDate) {
-                                                po.set('lastModified', file.lastModifiedDate);
-                                            }
-                                            po.set('key', sgData.fields.key);
-                                            if (sgData.fields.ACL === 'public-read') {
-                                                po.set('url', sgData.url + '/' + sgData.fields.key);
-                                            }
-
-                                            so.push(po);
-                                            if (self.model) {
-                                                self.model.set(img.role, po);
-                                                so.push(self.model);
-                                            }
-
-                                            return api.Object.saveAll(so, vo)
-                                                .then(function () {
-                                                    return po;
-                                                });
-                                        })
-                                        .then(function (fdb) {
-                                            var flDb = api.Object.fromJSON(sgData.file);
-                                            $pel.find('.file-edit').show();
-                                            $pel.find('.file-edit').val('');
-                                            $pel.find('.fileinput-button').show();
-                                            $pel.find('.progress').hide();
-                                            $pel.find("input[type=\"file\"]").val('');
-                                            self.renderImage(fdb ? fdb.toJSON() : null, $pel).then(resolve, reject);
-                                        })
-                                        .then(resolve, reject);
-                                },
-                                error: function (err) {
-                                    $pel.find('.progress').hide();
-                                    $pel.find('.file-edit').show();
-                                    $pel.find('.fileinput-button').show();
-                                    reject((err.textContent || 'error') + ' uploading to cloud ' + file.name);
-                                },
-                                xhr: function () {
-                                    myXhr = $.ajaxSettings.xhr();
-                                    if (myXhr.upload) {
-                                        myXhr.upload.addEventListener('progress', function (evt) {
-                                            if (evt.lengthComputable) {
-                                                var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
-                                                $pel.find('.progress span').html(percentComplete < 95 ? percentComplete + '%' : 'sending to cloud..');
-                                                $pel.find('.progress .progress-bar').css({ width: percentComplete + '%' });
-                                            }
-                                        }, false);
-                                    } else {
-                                        $pel.find('.progress').hide();
-                                        console.log("Uploadress is not supported.");
-                                    }
-                                    return myXhr;
-                                }
-                            });
-                        }, function (err) {
+                            return po;
+                        })
+                        .then(function (fdb) {
+                            $pel.find('.file-edit').show();
+                            $pel.find('.file-edit').val('');
+                            $pel.find('.fileinput-button').show();
+                            $pel.find('.progress').hide();
+                            $pel.find("input[type=\"file\"]").val('');
+                            self.renderImage(fdb ? fdb.toJSON() : null, $pel).then(resolve, reject);
+                        })
+                        .catch(function (err) {
                             $pel.find('.progress').hide();
                             $pel.find('.file-edit').show();
                             $pel.find('.fileinput-button').show();
@@ -1742,7 +1681,7 @@
                 name: img.name || img.fileName,
                 id: img.objectId,
                 url: url,
-                size: img.size.toByteSize()
+                size: (img.size || 0).toByteSize()
             }));
 
             vm.find('a.text-danger:last').click(function (evt) {
@@ -2038,90 +1977,28 @@
                         if (self.model && self.model.id) {
                             fp.objectId = self.model.id;
                         }
-                        return api.Cloud.run('createPresignedPost', fp)
-                            .then(function (sgData) {
-                                var po,
-                                    form = new FormData();
-                                // form.append('Bucket', 'test-box-devel');
-                                api.$.each(sgData.fields, function (fix, fdt) {
-                                    form.append(fix, fdt);
-                                });
-                                form.append('file', file);
-
-                                if (sgData.file) {
-                                    sgData.file.className = sgData.file.className || 'Files';
-                                    po = api.Object.fromJSON(sgData.file);
+                        return api.Utils.upload(file, fp, function (loaded, total, percentComplete) {
+                            $el.parent().find('.summer-progress span').html(percentComplete + '%');
+                            $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
+                        })
+                            .then(function (jsmg) {
+                                editor.restoreRange();
+                                if (jsmg) {
+                                    editor.insertImage(jsmg.get('url') ? jsmg.get('url') : (api.serverURL + '/storage/' + api.applicationId + '/' + jsmg.id), jsmg.get('name'));
                                 }
-
-                                return new Promise(function (resolve, reject) {
-                                    api.$.ajax({
-                                        url: sgData.url,
-                                        type: "POST",
-                                        data: form,
-                                        processData: false, //Work around #1
-                                        contentType: false, //Work around #2
-                                        success: function (rzi) {
-                                            return Promise.resolve()
-                                                .then(function () {
-
-                                                    if (!sgData.file) {
-                                                        return;
-                                                    }
-                                                    if (file.size) {
-                                                        po.set('size', file.size);
-                                                    }
-                                                    if (file.lastModifiedDate) {
-                                                        po.set('lastModified', file.lastModifiedDate);
-                                                    }
-                                                    po.set('key', sgData.fields.key);
-                                                    if (sgData.fields.ACL === 'public-read') {
-                                                        po.set('url', sgData.url + '/' + sgData.fields.key);
-                                                    }
-                                                    return po.save({}, vo);
-                                                })
-                                                .then(function (jsmg) {
-                                                    editor.restoreRange();
-                                                    if (jsmg) {
-                                                        editor.insertImage(api.serverURL + '/storage/' + api.applicationId + '/' + jsmg.id, jsmg.get('name'));
-                                                    }
-
-                                                    $el.parent().find('.summer-progress').hide();
-                                                    resolve();
-                                                })
-                                                .then(resolve, reject);
-                                        },
-                                        error: function (err) {
-                                            $el.parent().find('.summer-progress').hide();
-                                            reject((err.textContent || 'error') + ' uploading to cloud ' + file.name);
-                                        },
-                                        xhr: function () {
-                                            myXhr = $.ajaxSettings.xhr();
-                                            if (myXhr.upload) {
-                                                myXhr.upload.addEventListener('progress', function (evt) {
-                                                    if (evt.lengthComputable) {
-                                                        var percentComplete = Math.floor((evt.loaded / evt.total) * 100);
-                                                        $el.parent().find('.summer-progress span').html(percentComplete < 95 ? percentComplete + '%' : _t('sending to cloud..'));
-                                                        $el.parent().find('.summer-progress .progress-bar').css({ width: percentComplete + '%' });
-                                                    }
-                                                }, false);
-                                            } else {
-                                                $el.parent().find('.summer-progress').hide();
-                                            }
-                                            return myXhr;
-                                        }
-                                    });
-                                });
-
-                            }, function (err) {
                                 $el.parent().find('.summer-progress').hide();
-                                Box.Trace.reportError(err);
-                                //  reject(err.message || err);
+                            })
+                            .catch(function (err) {
+                                $el.parent().find('.summer-progress').hide();
+                                editor.restoreRange();
+                                api.Trace.reportError(err);
                             });
                     });
 
                 }
             }
         });
+
         $el.summernote(self.options.summernote);
         $el.parent().css('position', 'relative');
         $el.parent().append(self.options.progressBar);
