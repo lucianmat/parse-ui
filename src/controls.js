@@ -365,7 +365,7 @@
                 return rz.then(function () {
                     var vq = {};
 
-                    if (typeof o.useMasterKey !== 'undefined') {
+                    if (typeof o.useMasterKey !== 'undefined' && api.masterKey) {
                         vq.useMasterKey = o.useMasterKey;
                     }
 
@@ -500,7 +500,7 @@
                 } else if (typeof val === 'string') {
                     pq.equalTo('objectId', val);
                 }
-                if (self.options.useMasterKey) {
+                if (self.options.useMasterKey && api.masterKey) {
                     so = { useMasterKey: true };
                 }
                 return pq.find(so)
@@ -1214,6 +1214,60 @@
     Editor.prototype = Object.create(Control.prototype);
     Editor.prototype.constructor = Editor;
 
+    Editor.prototype.save = function () {
+        var self = this,
+            vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
+
+        return self.update()
+            .then(function () {
+                self.trigger('saving');
+                return self.model.save({}, vo);
+            })
+            .then(function () {
+                return self._uploadFiles()
+                    .then(function () {
+                        if (self.model.dirty()) {
+                            return self.model.save({}, vo);
+                        }
+                    });
+            })
+            .then(function () {
+                return Promise.all($.each(self.childrens || [], function (rms) {
+                    return typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
+                }));
+            })
+            .then(function () {
+                if (typeof self.options.onUpdated === 'function') {
+                    self.options.onUpdated(self);
+                }
+
+                self.trigger('saved');
+                api.Utils.require('notification')
+                    .then(function () {
+                        $.notify({
+                            message: _t("Updated") + " !",
+                            icon: "fa fa-info-circle"
+                        }, { type: "info" });
+                    });
+
+                if (!self.model && self.model.id && self._useEditorLock && api.Socket.hasClient()) {
+                    self._timerSync = { className: self.model.className, objectId: self.model.id };
+                    self._lockSync();
+                }
+
+            })
+            .catch(function (err) {
+                if (typeof self.options.onError === 'function') {
+                    self.options.onError(err);
+                }
+                if (!err.validate) {
+                    api.Utils.require('notification')
+                        .then(function () {
+                            api.Trace.captureException(err);
+                        });
+                }
+            });
+    };
     Editor.prototype.initialize = function () {
         var self = this,
             rqs;
@@ -1248,7 +1302,7 @@
         if (!this.options.readOnly && this.options.createButtonClass) {
             this.$(this.options.createButtonClass).click(function (evt) {
                 var $this = $(evt.currentTarget),
-                    vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
+                    vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
 
                 evt.preventDefault();
                 if ($(this).hasClass('disabled')) {
@@ -1256,56 +1310,11 @@
                 }
                 $this.hide();
 
-                self.update()
+                return self.save()
                     .then(function () {
-                        self.trigger('saving');
-                        return self.model.save({}, vo);
-                    })
-                    .then(function () {
-                        return self._uploadFiles()
-                            .then(function () {
-                                if (self.model.dirty()) {
-                                    return self.model.save({}, vo);
-                                }
-                            });
-                    })
-                    .then(function () {
-                        return Promise.all($.each(self.childrens || [], function (rms) {
-                            return typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
-                        }));
-                    })
-                    .then(function () {
-                        if (typeof self.options.onUpdated === 'function') {
-                            self.options.onUpdated(self);
-                        }
-
-                        self.trigger('saved');
-                        api.Utils.require('notification')
-                            .then(function () {
-                                $.notify({
-                                    message: _t("Updated") + " !",
-                                    icon: "fa fa-info-circle"
-                                }, { type: "info" });
-                            });
-
-                        if (!self.model && self.model.id && self._useEditorLock && api.Socket.hasClient()) {
-                            self._timerSync = { className: self.model.className, objectId: self.model.id };
-                            self._lockSync();
-                        }
                         $this.show();
-                    })
-                    .catch(function (err) {
-                        $this.show();
-                        if (typeof self.options.onError === 'function') {
-                            self.options.onError(err);
-                        }
-                        if (!err.validate) {
-                            api.Utils.require('notification')
-                                .then(function () {
-                                    api.Trace.captureException(err);
-                                });
-                        }
                     });
+
             });
         } else {
             this.$(this.options.createButtonClass).hide();
@@ -1356,7 +1365,7 @@
         this.$('select[data-field-target]').each(function () {
             var vd = $(this).data('bm-field'),
                 oq = {};
-            if (self.options.useMasterKey) {
+            if (self.options.useMasterKey && api.masterKey) {
                 oq = { useMasterKey: true };
             }
             if (vd && vd.split('$')[0] === self.options.className) {
@@ -1642,7 +1651,7 @@
                 });
             }))
             .then(function () {
-                var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
+                var vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
                 if (updated) {
                     self.trigger('saving');
                     return self.model.save({}, vo)
@@ -1702,7 +1711,7 @@
                                     var ots, vf = vd.bmField.split('$')[1],
                                         img;
 
-                                    if (self.options.useMasterKey) {
+                                    if (self.options.useMasterKey && api.masterKey) {
                                         ots = { useMasterKey: true };
                                     }
                                     img = self.model.get(vf);
@@ -1948,7 +1957,7 @@
                 },
                 onImageUpload: function (files) {
                     var editor = $(this).data('summernote').modules.editor,
-                        vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
+                        vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined,
                         pms = Promise.resolve(),
                         role = self.options.fileRole ||
                             ($el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false) ||
@@ -2146,6 +2155,204 @@
         bindFilter: '[data-bm-field]',
         dateFormat: 'DD-MM-YYYY',
         editSyncTimer: 30000
+    });
+
+
+    function Gallery(element, options) {
+        this.$el = this.$el || $(element);
+        this.options = this.options || $.extend({},
+            api.UI.Gallery.defaults,
+            $(this.$el).data(),
+            options || {});
+
+        api.UI.Editor.call(this, element);
+    }
+
+    Gallery.prototype = Object.create(Editor.prototype);
+    Gallery.prototype.constructor = Gallery;
+
+    Gallery.prototype.wire = function (ob, asChild) {
+        var self = this;
+
+        api.UI.Editor.prototype.wire.call(self, new api.Object(self.options.className), asChild);
+        if (!asChild) {
+            return this.p;
+        }
+        this.p = this.p.then(function () {
+            if (!ob || ob.isNew()) {
+                return;
+            }
+            if (self.query || self.options.query) {
+                return Promise.resolve(self.query || self.options.query);
+            }
+            return self.getQuery(ob, asChild);
+        }).then(function (query) {
+            var vp = (self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined);
+
+            return query ? query.find(vp) : null;
+        })
+            .then(function (items) {
+                self.render(items);
+            });
+
+        return this.p;
+    };
+
+    Gallery.prototype.getQuery = function (ob, asChild) {
+        var q = new api.Query(this.options.className);
+        q.equalTo('targetClass', ob.className);
+        q.equalTo('targetId', ob.id);
+        return q;
+    };
+
+    Gallery.prototype.initialize = function () {
+        var self = this;
+
+        api.UI.Editor.prototype.initialize.call(self);
+
+        this.$el.find(this.options.uploadButtonClass).on('click', function (evt) {
+            var pm,
+                $this = api.$(this),
+                $pel = self.$el.find('.input-file'),
+                finp = ($pel.find("input[type=\"file\"]") || [])[0];
+
+            evt.preventDefault();
+
+            if (!finp || !finp.files || !finp.files.length) {
+                return api.Utils.require('notification')
+                    .then(function () {
+                        $.notify({
+                            message: self.options.bmRequiredError || _t('file is required'),
+                            icon: "fa fa-exclamation-circle"
+                        }, {
+                                type: "danger",
+                                timer: 5000
+                            });
+                    });
+            }
+            if (!self.parent || !self.parent.model) {
+                return;
+            }
+            $this.hide();
+            pm = self.parent.model.isNew() ? self.parent.save() : Promise.resolve();
+
+            return pm.then(function () {
+                $pel.find('.file-edit').hide();
+                $pel.find('.fileinput-button').hide();
+
+                $pel.find('.progress').show();
+
+                return api.Utils.upload(finp, {
+                    className: self.parent.model.className,
+                    role: 'image',
+                    objectId: self.parent.model.id
+                }, function (max, prog, percentComplete) {
+                    $pel.find('.progress span').html(percentComplete + '%');
+                    $pel.find('.progress .progress-bar').css({ width: percentComplete + '%' });
+                });
+            }).then(function (flo) {
+                return self.update()
+                    .then(function () {
+                        var fm = self.model._getSaveJSON();
+                        api._.each(api._.keys(fm), function (ok) {
+                            flo.set(ok, self.model.get(ok));
+                        });
+                        return flo.save();
+                    })
+                    .then(function () {
+                        $pel.find('.progress').hide();
+                        $pel.find("input[type=\"file\"]").val('');
+                        $pel.find('.file-edit').val('');
+                        $pel.find('.file-edit').show();
+                        $pel.find('.fileinput-button').show();
+
+                        self.wire();
+                        self.render([flo], true);
+                        $this.show();
+                    });
+            })
+                .catch(function (err) {
+                    $pel.find('.progress').hide();
+                    $pel.find('.file-edit').show();
+                    $pel.find('.fileinput-button').show();
+                    $this.show();
+                    api.Trace.captureException(err);
+                });
+        });
+        return this.p;
+    };
+
+    Gallery.prototype.render = function (items, append) {
+        var self = this,
+            vt = this.$el.find('.file-list'),
+            vhtml = items && items.length ? api._.map(items, function (fi) {
+                var img = fi.toJSON(),
+                    url = (img.url ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId);
+
+                return self.options.imageFormat.format(Object.assign({}, img, {
+                    display: img.contentType && img.contentType.indexOf('image/') === 0 ? '<img src="' + url + '">' : '<i class="fa fa-file"></i>',
+                    name: img.name || img.fileName,
+                    id: img.objectId,
+                    url: url,
+                    size: (img.size || 0).toByteSize()
+                }));
+
+            }).join('') : self.options.imageEmpty;
+
+        api.UI.Editor.prototype.render.call(self);
+
+        if (!append) {
+            vt.empty();
+            vt.html(vhtml);
+        } else {
+            vt.find(self.options.emptyClass).remove();
+            vt.append(vhtml);
+        }
+
+        if (!items || !items.length) {
+            return this.p;
+        }
+
+        vt.find(self.options.removeButtonClass).slice(-items.length).on('click', function (evt) {
+            var $li = api.$(this).parents('li').eq(0);
+            evt.preventDefault();
+            api.Utils.require('bootstrap-dialog')
+                .then(function (BootstrapDialog) {
+                    BootstrapDialog.confirm({
+                        title: _t('Warning'),
+                        type: BootstrapDialog.TYPE_WARNING,
+                        message: "<i class='fa " + (fa5 ? "fa-trash-alt" : "fa-trash-o") + " text-danger'></i> " + _t("Remove file") + "?",
+                        closable: true,
+                        btnCancelLabel: '<i class="fa fa-ban"></i> ' + _t("Cancel"),
+                        btnOKLabel: '<i class="fa ' + (fa5 ? "fa-trash-alt" : "fa-trash-o") + '"></i> ' + _t("Delete"),
+                        btnOKClass: 'btn-danger',
+                        callback: function (result) {
+                            var nob;
+                            if (result) {
+                                nob = api.Object.fromJSON({ className: self.options.className, objectId: $li.data('object-id') });
+                                nob.destroy()
+                                    .then(function () {
+                                        var vpcnt = $li.parent().find('li').length;
+                                        $li.remove();
+                                        if (vpcnt < 2) {
+                                            self.render([]);
+                                        }
+                                    });
+                            }
+                        }
+                    });
+                });
+        });
+        return this.p;
+    };
+
+    api.UI.Gallery = Gallery;
+    api.UI.Gallery.defaults = $.extend({}, api.UI.Editor.defaults, {
+        className: 'Files',
+        removeButtonClass: '.text-danger',
+        uploadButtonClass: '.btn-success',
+        emptyClass: '.empty',
+        imageEmpty: '<li class="empty"><div class="well well-sm">' + _t('No files') + '</div></li>'
     });
 
 
