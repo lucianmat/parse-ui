@@ -69,7 +69,7 @@
 
     Number.prototype.toByteSize = function () {
         var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        if (!this) return '0 Byte';
+        if (!this || (this == 0)) return '0 Byte';
         var i = parseInt(Math.floor(Math.log(this) / Math.log(1024)));
         return (this / Math.pow(1024, i)).format(2) + ' ' + sizes[i];
     };

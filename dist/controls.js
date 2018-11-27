@@ -1502,9 +1502,16 @@
                             }
                         }
                         if (!self.files[fdata.bmField]) {
+                            if (fdata.accept) {
+                                fdata.accept = api._.map(fdata.accept.split(','), function (mi) {
+                                    return mi.trim();
+                                });
+                            }
+
                             self.files[fdata.bmField] = {
                                 el: flel,
-                                role: vd
+                                role: vd,
+                                options: fdata
                             };
                         }
 
@@ -1610,6 +1617,21 @@
                     }
                     file = finp.files[0];
 
+                    if (img.options) {
+                        if (img.options.accept &&
+                            img.options.accept.length) {
+                            var ext = '.' + file.name.split('.').pop().toLowerCase();
+                            if (img.options.accept.indexOf(ext) === -1) {
+                                return reject(img.options.acceptError || _t('file extension not allowed, use ' + '<b>' + self.accept.join(',') + '</b>'));
+                            }
+                        }
+
+                        if (img.options.acceptSize &&
+                            (parseInt(img.options.acceptSize) < file.size)) {
+                            return reject(img.options.acceptSizeError || _t('file size not allowed, maximum ' + '<b>' + (img.options.acceptSize || 0).toByteSize() + '</b>'));
+                        }
+                    }
+                    
                     $pel.find('.file-edit').hide();
                     $pel.find('.fileinput-button').hide();
 
@@ -1623,6 +1645,7 @@
                     if (self.model && self.model.id) {
                         fp.objectId = self.model.id;
                     }
+
 
                     return api.Utils.upload(file, fp, function (loaded, total, percentComplete) {
                         $pel.find('.progress span').html(percentComplete + '%');
@@ -2167,6 +2190,12 @@
 
         api.UI.Editor.call(this, element);
         this.readOnly = false;
+
+        if (this.options.accept) {
+            this.accept = api._.map(this.options.accept.split(','), function (mi) {
+                return mi.trim();
+            });
+        }
     }
 
     Gallery.prototype = Object.create(Editor.prototype);
@@ -2233,6 +2262,35 @@
             }
             if (!self.parent || !self.parent.model) {
                 return;
+            }
+            if (self.accept &&
+                self.accept.length) {
+                var ext = '.' + finp.files[0].name.split('.').pop().toLowerCase();
+                if (self.accept.indexOf(ext) === -1) {
+                    return api.Utils.require('notification')
+                        .then(function () {
+                            $.notify({
+                                message: self.options.acceptError || _t('file extension not allowed, use ' + '<b>' + self.accept.join(',') + '</b>'),
+                                icon: "fa fa-exclamation-circle"
+                            }, {
+                                    type: "danger",
+                                    timer: 5000
+                                });
+                        });
+                }
+            }
+            if (self.options.acceptSize &&
+                (parseInt(self.options.acceptSize) < finp.files[0].size)) {
+                return api.Utils.require('notification')
+                    .then(function () {
+                        $.notify({
+                            message: self.options.acceptSizeError || _t('file size not allowed, maximum ' + '<b>' + (self.options.acceptSize || 0).toByteSize() + '</b>'),
+                            icon: "fa fa-exclamation-circle"
+                        }, {
+                                type: "danger",
+                                timer: 5000
+                            });
+                    });
             }
             $this.hide();
             pm = self.parent.model.isNew() ? self.parent.save() : Promise.resolve();
@@ -2334,7 +2392,7 @@
                                 nob.destroy()
                                     .then(function () {
                                         var vpcnt = $li.parent().find('[data-object-id]').length;
-                                        
+
                                         $li.remove();
                                         if (vpcnt < 2) {
                                             self.render([]);
