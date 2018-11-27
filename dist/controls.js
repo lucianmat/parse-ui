@@ -2166,6 +2166,7 @@
             options || {});
 
         api.UI.Editor.call(this, element);
+        this.readOnly = false;
     }
 
     Gallery.prototype = Object.create(Editor.prototype);
@@ -2282,24 +2283,23 @@
         return this.p;
     };
 
-    Gallery.prototype.render = function (items, append) {
+    Gallery.prototype.renderFiles = function (items, append) {
         var self = this,
             vt = this.$el.find('.file-list'),
             vhtml = items && items.length ? api._.map(items, function (fi) {
                 var img = fi.toJSON(),
-                    url = (img.url ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId);
+                    url = img.url ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId,
+                    fom = self.options.renderFile ? self.options.renderFile(fi) : Object.assign({}, img, {
+                        display: img.contentType && img.contentType.indexOf('image/') === 0 ? '<img src="' + url + '">' : '<i class="fa fa-file"></i>',
+                        name: img.name || img.fileName,
+                        id: img.objectId,
+                        url: url,
+                        size: (img.size || 0).toByteSize()
+                    });
 
-                return self.options.imageFormat.format(Object.assign({}, img, {
-                    display: img.contentType && img.contentType.indexOf('image/') === 0 ? '<img src="' + url + '">' : '<i class="fa fa-file"></i>',
-                    name: img.name || img.fileName,
-                    id: img.objectId,
-                    url: url,
-                    size: (img.size || 0).toByteSize()
-                }));
+                return self.options.imageFormat.format(fom);
 
             }).join('') : self.options.imageEmpty;
-
-        api.UI.Editor.prototype.render.call(self);
 
         if (!append) {
             vt.empty();
@@ -2314,7 +2314,8 @@
         }
 
         vt.find(self.options.removeButtonClass).slice(-items.length).on('click', function (evt) {
-            var $li = api.$(this).parents('li').eq(0);
+            var $li = api.$(this).parents('[data-object-id]').eq(0);
+
             evt.preventDefault();
             api.Utils.require('bootstrap-dialog')
                 .then(function (BootstrapDialog) {
@@ -2332,7 +2333,8 @@
                                 nob = api.Object.fromJSON({ className: self.options.className, objectId: $li.data('object-id') });
                                 nob.destroy()
                                     .then(function () {
-                                        var vpcnt = $li.parent().find('li').length;
+                                        var vpcnt = $li.parent().find('[data-object-id]').length;
+                                        
                                         $li.remove();
                                         if (vpcnt < 2) {
                                             self.render([]);
@@ -2344,6 +2346,14 @@
                 });
         });
         return this.p;
+    };
+
+    Gallery.prototype.render = function (items, append) {
+
+        api.UI.Editor.prototype.render.call(this);
+
+        return typeof this.options.renderFiles === 'function' ? this.options.renderFiles.call(this, items, append) : this.renderFiles(items, append);
+
     };
 
     api.UI.Gallery = Gallery;
