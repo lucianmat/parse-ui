@@ -12,6 +12,7 @@
         i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
         bs4 = typeof module.config().bs4 === 'undefined' ? false : module.config().bs4,
         fa5 = typeof module.config().fa5 === 'undefined' ? false : module.config().fa5,
+        useTasks =  typeof module.config().useTasks === 'undefined' ? false : module.config().useTasks, 
         lazyEdit = typeof module.config().lazyEdit === 'undefined' ? false : module.config().lazyEdit,
         translator;
 
@@ -593,8 +594,7 @@
                 return dt.settings()[0].aoColumns[ci].field;
             });
 
-        api.CoreManager.getRESTController()
-            .request('POST', 'tasks/create',
+        api.Cloud.run(self.options.downloadUrl ||  useTasks ?  'tasks/create' : 'export',
                 {
                     query: self.__qcache,
                     className: self.options.className,
@@ -604,14 +604,19 @@
                     type: 'export'
                 })
             .then(function (job) {
-                return api.Utils.require('notification')
-                    .then(function () {
-                        $.notify({
-                            message: 'Export data task created',
-                            type: "info",
-                            icon: "fa fa-download"
-                        }, { timeout: 5000 });
-                    });
+                if (!useTasks && job && job.url) {
+                    $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{message}</div>'.format({message : _t('To download data click <a href="{url}" target="_blank">{url}</a>').format({url :job.url})}));
+                } else {
+                    return api.Utils.require('notification')
+                        .then(function () {
+                            $.notify({
+                                message: job && job.message ? job.message :  _t('Export data task created'),
+                                type: "info",
+                                icon: "fa fa-download"
+                            }, { timeout: 5000 });
+                        });
+                }
+                
             }, function (err) {
                 api.Utils.require('notification')
                     .then(function () {
@@ -826,7 +831,7 @@
                 }
 
             }
-            dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
+            dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12 dt-infos'>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
             if (bs4) {
                 $.fn.dataTableExt.classes.sWrapper = "dataTables_wrapper  dt-bootstrap4";
             }
