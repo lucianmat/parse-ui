@@ -592,21 +592,31 @@
             colDefs = dt.settings()[0].aoColumns,
             selFields = dt.columns(':visible')[0].map(function (ci) {
                 return dt.settings()[0].aoColumns[ci].field;
+            }),
+            lbls =  dt.columns(':visible')[0].map(function (ci) {
+                return $(dt.settings()[0].aoColumns[ci].nTh).text() || dt.settings()[0].aoColumns[ci].field;
             });
 
+            if (!useTasks) {
+                $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>Generating download file</div>');
+            }
         api.Cloud.run(self.options.downloadUrl ||  useTasks ?  'tasks/create' : 'export',
                 {
                     query: self.__qcache,
                     className: self.options.className,
                     items: selFields,
+                    labels : lbls,
                     title: 'Export ' + self.options.className + ' items',
                     content: 'Export task will be created, when data is ready you will be notified',
                     type: 'export'
                 })
             .then(function (job) {
                 if (!useTasks && job && job.url) {
-                    $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{message}</div>'.format({message : _t('To download data click <a href="{url}" target="_blank">{url}</a>').format({url :job.url})}));
+                    $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-info alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{message}</div>'.format({message : _t('To download data  <a href="{url}" target="_blank">click here</a>').format({url :job.url})}));
                 } else {
+                    if (!useTasks) {
+                        $(dt.containers()).find('.row .dt-infos').html('');
+                    }
                     return api.Utils.require('notification')
                         .then(function () {
                             $.notify({
@@ -616,8 +626,10 @@
                             }, { timeout: 5000 });
                         });
                 }
-                
             }, function (err) {
+                if (!useTasks) {
+                    $(dt.containers()).find('.row .dt-infos').html('');
+                }
                 api.Utils.require('notification')
                     .then(function () {
                         api.Trace.captureException(err);
