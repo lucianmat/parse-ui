@@ -18,6 +18,7 @@
   "homepage": "https://github.com/lucianmat/parse-ui#readme",
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-minify": "^3.1.0"
+    "gulp-minify": "^3.1.0",
+    "natives": "^1.1.6"
   }
 }

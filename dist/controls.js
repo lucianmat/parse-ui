@@ -12,7 +12,6 @@
         i18n = typeof module.config().i18n === 'undefined' ? false : module.config().i18n,
         bs4 = typeof module.config().bs4 === 'undefined' ? false : module.config().bs4,
         fa5 = typeof module.config().fa5 === 'undefined' ? false : module.config().fa5,
-        useTasks =  typeof module.config().useTasks === 'undefined' ? false : module.config().useTasks, 
         lazyEdit = typeof module.config().lazyEdit === 'undefined' ? false : module.config().lazyEdit,
         translator;
 
@@ -592,44 +591,28 @@
             colDefs = dt.settings()[0].aoColumns,
             selFields = dt.columns(':visible')[0].map(function (ci) {
                 return dt.settings()[0].aoColumns[ci].field;
-            }),
-            lbls =  dt.columns(':visible')[0].map(function (ci) {
-                return $(dt.settings()[0].aoColumns[ci].nTh).text() || dt.settings()[0].aoColumns[ci].field;
             });
 
-            if (!useTasks) {
-                $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-warning alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>Generating download file</div>');
-            }
-        api.Cloud.run(self.options.downloadUrl ||  useTasks ?  'tasks/create' : 'export',
+        api.CoreManager.getRESTController()
+            .request('POST', 'tasks/create',
                 {
                     query: self.__qcache,
                     className: self.options.className,
                     items: selFields,
-                    labels : lbls,
                     title: 'Export ' + self.options.className + ' items',
                     content: 'Export task will be created, when data is ready you will be notified',
                     type: 'export'
                 })
             .then(function (job) {
-                if (!useTasks && job && job.url) {
-                    $(dt.containers()).find('.row .dt-infos').html('<div class="alert alert-info alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{message}</div>'.format({message : _t('To download data  <a href="{url}" target="_blank">click here</a>').format({url :job.url})}));
-                } else {
-                    if (!useTasks) {
-                        $(dt.containers()).find('.row .dt-infos').html('');
-                    }
-                    return api.Utils.require('notification')
-                        .then(function () {
-                            $.notify({
-                                message: job && job.message ? job.message :  _t('Export data task created'),
-                                type: "info",
-                                icon: "fa fa-download"
-                            }, { timeout: 5000 });
-                        });
-                }
+                return api.Utils.require('notification')
+                    .then(function () {
+                        $.notify({
+                            message: 'Export data task created',
+                            type: "info",
+                            icon: "fa fa-download"
+                        }, { timeout: 5000 });
+                    });
             }, function (err) {
-                if (!useTasks) {
-                    $(dt.containers()).find('.row .dt-infos').html('');
-                }
                 api.Utils.require('notification')
                     .then(function () {
                         api.Trace.captureException(err);
@@ -843,7 +826,7 @@
                 }
 
             }
-            dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12 dt-infos'>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
+            dtOptions.dom = dtOptions.dom || "<'row'<'col-sm-6'B><'col-sm-6'f>><'row'<'col-sm-12'tr>><'row'<'col-sm-5'i><'col-sm-7'p>>";
             if (bs4) {
                 $.fn.dataTableExt.classes.sWrapper = "dataTables_wrapper  dt-bootstrap4";
             }
@@ -1720,6 +1703,10 @@
             var url = (img.url ? img.url : api.serverURL + '/storage/' + api.applicationId + '/' + img.objectId),
                 vm = $container.parents('.file-placeholder').find('.file-list');
 
+            $container.data('bmField', img.targetClass + '$' + img.role);
+            $container.data('fieldType', 'Pointer');
+            $container.data('fieldTarget','Files');
+            
             if (!vm.length) {
                 $container.parents('.file-placeholder').prepend('<ul class="file-list"></ul>');
                 vm = $container.parents('.file-placeholder').find('.file-list');
