@@ -809,6 +809,22 @@
                 return Promise.resolve(api._router);
             });
     };
+
+    api._ensureMasterKey = function (ob, full) {
+        if (!ob || !ob.useMasterKey) {
+            return Promise.resolve();
+        }
+        if (api.masterKey && (!full || api._fullMasterKey)) {
+            return Promise.resolve();
+        }
+        return api.Cloud.run('_getMasterKey', {full : !!full})
+            .then(function (rz) {
+                api.masterKey = rz.masterKey;
+                api._fullMasterKey = !!full;
+                return Promise.resolve();
+            });
+    };
+
     api.Utils = {
         ismobile: (/iphone|ipad|ipod|android|blackberry|mini|windows\sce|palm/i.test(navigator.userAgent.toLowerCase())),
         diff: {

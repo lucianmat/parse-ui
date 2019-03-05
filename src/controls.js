@@ -365,12 +365,15 @@
                 return rz.then(function () {
                     var vq = {};
 
-                    if (typeof o.useMasterKey !== 'undefined' && api.masterKey) {
-                        vq.useMasterKey = o.useMasterKey;
+                    if (typeof o.useMasterKey !== 'undefined') {
+                        vq.useMasterKey = !!o.useMasterKey;
                     }
 
                     if (o.preload) {
-                        return self.query.find(vq)
+                            return api._ensureMasterKey(vq)
+                            .then(function () {
+                                return self.query.find(vq);
+                            })
                             .then(function (ri) {
                                 var rht = $.map(ri, function (ritm) {
                                     return '<option value="' + encodeURI(ritm.id) + '">' +
@@ -500,10 +503,13 @@
                 } else if (typeof val === 'string') {
                     pq.equalTo('objectId', val);
                 }
-                if (self.options.useMasterKey && api.masterKey) {
+                if (self.options.useMasterKey) {
                     so = { useMasterKey: true };
                 }
-                return pq.find(so)
+                return api._ensureMasterKey(so)
+                    .then(function () {
+                        return pq.find(so);
+                    })
                     .then(function (rz) {
                         self.__initial = rz;
                         self.$el.html($.map(rz, function (ri) {
@@ -571,7 +577,12 @@
             options || {});
 
         this.options.className = this.options.className || this.$el.data('class-name');
+    
         this.queryOptions = this.options.query || {};
+
+        if (this.options.useMasterKey) {
+            this.queryOptions.useMasterKey = true;
+        }
         this.where = this.options.where || {};
 
         this._include = this.options.include || this.$el.data('query-include');
@@ -644,7 +655,11 @@
                         if (self._include) {
                             rqp.include(self._include);
                         }
-                        rqp.find(self.queryOptions).then(function (response) {
+                        return api._ensureMasterKey(self.queryOptions)
+                            .then(function () {
+                                return rqp.find(self.queryOptions);
+                            })
+                            .then(function (response) {
                             var dresp = {
                                 draw: data.draw,
                                 recordsTotal: self.___totalCount || 0,
@@ -701,11 +716,14 @@
                     cf.call(self, data.search ? data.search.value : undefined)
                         .then(function (rqp) {
                             var qjsn = JSON.stringify(rqp.toJSON());
-                            if (self.__qcache === qjsn) {
-                                return _processQuery(rqp);
-                            }
+                                if (self.__qcache === qjsn) {
+                                    return _processQuery(rqp);
+                                }
 
-                            return rqp.count(self.queryOptions)
+                                return api._ensureMasterKey(self.queryOptions)
+                                    .then(function () {
+                                        return rqp.count(self.queryOptions);
+                                    })
                                 .then(function (count) {
                                     if (!data.search || !data.search.value || data.search.value === '') {
                                         self.___totalCount = count;
@@ -1147,14 +1165,18 @@
         if (!this.options.className || !this.options.pipeline) {
             return Promise.resolve([]);
         }
-        if (this.options.useMasterKey && api.masterKey) {
+        if (this.options.useMasterKey) {
             vp = { useMasterKey: true };
         }
-        return api.Cloud.run('data_aggregate',
-            {
-                className: this.options.className,
-                pipeline: this.options.pipeline
-            }, vp)
+       
+        return api._ensureMasterKey(vp)
+            .then(function () {
+                return api.Cloud.run('data_aggregate',
+                    {
+                        className: this.options.className,
+                        pipeline: this.options.pipeline
+                    }, vp);
+            })
             .then(function (data) {
                 if (typeof self.options.processData === 'function') {
                     return self.options.processData.call(self, data);
@@ -1216,9 +1238,12 @@
 
     Editor.prototype.save = function () {
         var self = this,
-            vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
+            vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
 
         return self.update()
+            .then(function () {
+                return api._ensureMasterKey(vo);
+            })
             .then(function () {
                 self.trigger('saving');
                 return self.model.save({}, vo);
@@ -1302,7 +1327,7 @@
         if (!this.options.readOnly && this.options.createButtonClass) {
             this.$(this.options.createButtonClass).click(function (evt) {
                 var $this = $(evt.currentTarget),
-                    vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
+                    vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
 
                 evt.preventDefault();
                 if ($(this).hasClass('disabled')) {
@@ -1310,7 +1335,10 @@
                 }
                 $this.hide();
 
-                return self.save()
+                return api._ensureMasterKey(vo)
+                    .then(function () {
+                        return self.save({}, vo);
+                    })
                     .then(function () {
                         $this.show();
                     });
@@ -1322,7 +1350,8 @@
 
         if (this.$('[data-is-html]').length) {
             var $inputs = this.$('[data-is-html]');
-            rqs = ['summernote']
+            rqs = ['summernote'];
+            
             if (loadCss) {
                 rqs.push('css!' + CDN_ROOT + '/vendor/summernote/summernote');
             }
@@ -1365,8 +1394,11 @@
         this.$('select[data-field-target]').each(function () {
             var vd = $(this).data('bm-field'),
                 oq = {};
-            if (self.options.useMasterKey && api.masterKey) {
+            if (self.options.useMasterKey) {
                 oq = { useMasterKey: true };
+                self.p = self.p.then(function () {
+                    return api._ensureMasterKey(oq);
+                });
             }
             if (vd && vd.split('$')[0] === self.options.className) {
                 vd = vd.split('$')[1];
@@ -1674,10 +1706,14 @@
                 });
             }))
             .then(function () {
-                var vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined;
+                var vo = self.options.useMasterKey ? { useMasterKey: true } : undefined;
                 if (updated) {
                     self.trigger('saving');
-                    return self.model.save({}, vo)
+
+                    return api._ensureMasterKey(vo)
+                        .then(function () {
+                            return self.model.save({}, vo);
+                        })
                         .then(function () {
                             self.trigger('saved');
                             return self.model;
@@ -1738,7 +1774,7 @@
                                     var ots, vf = vd.bmField.split('$')[1],
                                         img;
 
-                                    if (self.options.useMasterKey && api.masterKey) {
+                                    if (self.options.useMasterKey) {
                                         ots = { useMasterKey: true };
                                     }
                                     img = self.model.get(vf);
@@ -1746,7 +1782,10 @@
                                     if (img) {
                                         img.set('purged', true);
                                     }
-                                    return api.Object.saveAll([img, self.model])
+                                    return api._ensureMasterKey(ots)
+                                        .then(function () {
+                                            return api.Object.saveAll([img, self.model], ots);
+                                        })
                                         .then(function () {
                                             self.renderImage(null, $container);
                                         });
@@ -1984,16 +2023,20 @@
                 },
                 onImageUpload: function (files) {
                     var editor = $(this).data('summernote').modules.editor,
-                        vo = self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined,
+                        vo = self.options.useMasterKey ? { useMasterKey: true } : undefined,
                         pms = Promise.resolve(),
                         role = self.options.fileRole ||
                             ($el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false) ||
                             'attachment',
                         file = files[0];
 
+                    if (vo && vo.useMasterKey) {
+                        pms = api._ensureMasterKey(vo);
+                    }
+
                     if (self.model && self.model.isNew()) {
                         pms = pms.then(function () {
-                            return pms.save({}, vo);
+                            return self.model.save({}, vo);
                         });
                     }
                     return pms.then(function () {
@@ -2221,9 +2264,12 @@
             }
             return self.getQuery(ob, asChild);
         }).then(function (query) {
-            var vp = (self.options.useMasterKey && api.masterKey ? { useMasterKey: true } : undefined);
+            var vp = (self.options.useMasterKey ? { useMasterKey: true } : undefined);
 
-            return query ? query.find(vp) : null;
+            return api._ensureMasterKey(vp)
+                .then(function () {
+                    return query ? query.find(vp) : null;
+                });
         })
             .then(function (items) {
                 self.render(items);
