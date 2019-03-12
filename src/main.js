@@ -1067,6 +1067,12 @@
                         $.each(urls, function (ix, uri) {
                             $(document.body).addClass('role-' + uri.get('name'));
                         });
+                    }, function (err) {
+                        if (err && (err.code=== 209)) {
+                            $(document.body).removeClass('active-user').addClass('anonymous-user');
+                            api.User.logOut();
+                            window.location.reload(true);
+                        } 
                     });
             } else {
                 $(document.body).removeClass('active-user').addClass('anonymous-user');
