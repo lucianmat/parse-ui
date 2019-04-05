@@ -1534,7 +1534,7 @@
                             }
                         }
                         if (!self.files[fdata.bmField]) {
-                            if (fdata.accept) {
+                            if (fdata.accept && (typeof fdata.accept.split === 'function')) {
                                 fdata.accept = api._.map(fdata.accept.split(','), function (mi) {
                                     return mi.trim();
                                 });
