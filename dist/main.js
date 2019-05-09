@@ -1226,8 +1226,8 @@
                 current = current[parts[i]];
             }
             return current;
-        }
-
+        },
+        _t : _t
     };
 
     api.User.prototype.getRoles = function (options) {
