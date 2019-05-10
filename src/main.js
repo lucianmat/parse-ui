@@ -89,7 +89,7 @@
         }
         var hours = Math.floor((temp %= 86400) / 3600);
         if (hours) {
-            return hours + ' ' + _t('day') + numberEnding(hours);
+            return hours + ' ' + _t('hour') + numberEnding(hours);
         }
         var minutes = Math.floor((temp %= 3600) / 60);
         if (minutes) {
