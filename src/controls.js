@@ -2070,7 +2070,7 @@
                             .catch(function (err) {
                                 $el.parent().find('.summer-progress').hide();
                                 editor.restoreRange();
-                                api.Trace.reportError(err);
+                                api.Trace.captureException(err);
                             });
                     });
 
