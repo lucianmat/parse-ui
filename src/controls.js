@@ -1868,7 +1868,7 @@
         }
         return pm.then(function () {
             return Promise.all($.map(self.childrens || [], function (chld) {
-                return chld.validate();
+                return typeof chld.validate === 'function' ?  chld.validate() : true;
             }));
         });
     };

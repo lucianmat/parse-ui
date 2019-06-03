@@ -1868,7 +1868,7 @@
         }
         return pm.then(function () {
             return Promise.all($.map(self.childrens || [], function (chld) {
-                return chld.validate();
+                return typeof chld.validate === 'function' ?  chld.validate() : true;
             }));
         });
     };
@@ -2070,7 +2070,7 @@
                             .catch(function (err) {
                                 $el.parent().find('.summer-progress').hide();
                                 editor.restoreRange();
-                                api.Trace.reportError(err);
+                                api.Trace.captureException(err);
                             });
                     });
 
