@@ -1686,6 +1686,7 @@
                         .then(function (po) {
                             if (self.model) {
                                 self.model.set(img.role, po);
+                                updated = true;
                             }
                             return po;
                         })
