@@ -1463,6 +1463,7 @@
 
         this.model = obj;
         this.__files = [];
+        this.files = {};
 
         if (this.model && this.model.id) {
             this.readOnly = this.options.readOnly;
@@ -2041,10 +2042,7 @@
                         });
                     }
                     return pms.then(function () {
-                        var fp,
-                            vpms = self.options.fileRole ||
-                                $el.data('bm-field') ? $el.data('bm-field').split('$')[1] : false ||
-                                'attachment';
+                        var fp;
 
                         $el.parent().find('.summer-progress').show();
                         fp = {
