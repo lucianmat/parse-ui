@@ -1703,7 +1703,12 @@
                             $pel.find('.progress').hide();
                             $pel.find('.file-edit').show();
                             $pel.find('.fileinput-button').show();
-                            reject(err);
+                          //  reject(err);
+                         return api.Utils.require('notification')
+                          .then(function () {
+                              api.Trace.captureException(err);
+                              resolve();
+                          });
                         });
                 });
             }))
