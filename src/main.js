@@ -1264,6 +1264,9 @@
             },
             clear() {
                 storage.clear();
+            },
+            getAllKeys : function () {
+                return Object.keys(storage)
             }
         });
     };
