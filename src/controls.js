@@ -1257,7 +1257,7 @@
                     });
             })
             .then(function () {
-                return Promise.all($.each(self.childrens || [], function (rms) {
+                return Promise.all($.each(self.childrens || [], function (ix, rms) {
                     return typeof rms.saved === 'function' ? rms.saved() : Promise.resolve();
                 }));
             })
